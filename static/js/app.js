@@ -90,9 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const locationIcon = user.location === '--' ? '' : '<i class="fa-solid fa-building"></i> ';
                 const rankDisplay = user.rank ? escapeHtml(user.rank) + ' ' : '';
 
+                const rDisplay = user.rank ? escapeHtml(user.rank) : '';
                 tbodyHtml += `
                     <tr>
-                        <td><strong>${rankDisplay}${escapeHtml(user.name)}</strong></td>
+                        <td style="color: var(--text-muted); font-weight: 500;">${rDisplay}</td>
+                        <td><strong>${escapeHtml(user.name)}</strong></td>
                         <td><span class="status-badge ${user.status}">${statusIcon}</span></td>
                         <td><div class="location-cell">${locationIcon}${escapeHtml(user.location)}</div></td>
                         <td class="comment-cell">${escapeHtml(user.comment)}</td>
@@ -117,9 +119,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <table class="employee-table">
                         <thead>
                             <tr>
-                                <th style="width: 20%;">NAME</th>
+                                <th style="width: 7%;">RANK</th>
+                                <th style="width: 15%;">NAME</th>
                                 <th style="width: 15%;">STATUS</th>
-                                <th style="width: 20%;">LOCATION</th>
+                                <th style="width: 18%;">LOCATION</th>
                                 <th style="width: 45%;">COMMENT</th>
                             </tr>
                         </thead>
