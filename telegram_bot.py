@@ -122,8 +122,8 @@ def process_message(chat_id, text):
         return
 
     # Handle Onboarding Flow
-    if not user:
-        if chat_id not in onboarding_state:
+    if not user or text_clean.lower() == "/start":
+        if chat_id not in onboarding_state or text_clean.lower() == "/start":
             onboarding_state[chat_id] = {"step": "name"}
             send_message(chat_id, "👋 Welcome to Hermes!\n\nI don't recognize your account yet. Let's get you set up.\n\nWhat is your **Rank and Name**? (e.g., SSG Dixon)")
             return
