@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Board - {{ settings.org_name }}</title>
+    <link rel="stylesheet" href="/static/css/styles.css?v=2">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <nav class="top-nav">
+            <div class="nav-left">
+                <i class="fa-solid fa-server logo-icon"></i>
+                <span class="logo-text">Hermes Dashboard</span>
+                <span class="version-badge">v1.1</span>
+            </div>
+            
+            <div class="nav-center" style="font-weight: 900; font-size: 1.2rem; color: var(--accent-yellow); text-align: center; flex: 1;">
+                <span id="banner-org-name">{{ settings.org_name }}</span>
+            </div>
+
+            <div class="nav-right">
+                <div class="status-indicator">
+                    <div class="dot active" id="backend-status-dot"></div>
+                    <span id="backend-status-text">Backend Active</span>
+                </div>
+            </div>
+        </nav>
+
+        <main class="dashboard">
+            <section class="panel announcement-panel">
+                <div class="panel-header">
+                    <span class="badge yellow"><i class="fa-solid fa-bullhorn"></i> <span id="news-title">{{ settings.news_title }}</span></span>
+                </div>
+                <h2 id="news-body">{{ settings.news_body }}</h2>
+                <p id="news-author">{% if settings.news_author %}{{ settings.news_author }}{% else %}{{ settings.org_name }}{% endif %}</p>
+            </section>
+
+            <section class="clocks-grid">
+                <div class="clock-panel">
+                    <div class="clock-title"><i class="fa-regular fa-clock"></i> WEST COAST <span class="tz">PDT</span></div>
+                    <div class="time" id="time-pdt">--:--</div>
+                    <div class="date" id="date-pdt">---</div>
+                </div>
+                <div class="clock-panel active-clock">
+                    <div class="clock-title"><i class="fa-regular fa-clock"></i> LOCAL TIME</div>
+                    <div class="time" id="time-local">--:--</div>
+                    <div class="date" id="date-local">---</div>
+                </div>
+                <div class="clock-panel">
+                    <div class="clock-title"><i class="fa-regular fa-clock"></i> EAST COAST <span class="tz">EDT</span></div>
+                    <div class="time" id="time-edt">--:--</div>
+                    <div class="date" id="date-edt">---</div>
+                </div>
+                <div class="clock-panel">
+                    <div class="clock-title"><i class="fa-regular fa-clock"></i> UTC <span class="tz">UTC</span></div>
+                    <div class="time" id="time-utc">--:--</div>
+                    <div class="date" id="date-utc">---</div>
+                </div>
+            </section>
+
+            <div id="boards-container">
+                <!-- Dynamically populated by JS -->
+            </div>
+            
+            <!-- Check in button at bottom -->
+            <div style="text-align: right; margin-top: 10px;">
+                <button class="filter-btn" id="dev-sim-btn"><i class="fa-solid fa-id-badge"></i> Check-In</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Simulator Modal -->
+    <div id="sim-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Simulate Badge Tap</h2>
+            <input type="text" id="sim-uid" placeholder="UID (e.g., 111)" autocomplete="off">
+            <div class="modal-actions">
+                <button id="sim-cancel" class="btn-cancel">Cancel</button>
+                <button id="sim-submit" class="btn-submit">Tap Badge</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kiosk Interactive Flow Modal -->
+    <div id="kiosk-modal" class="modal hidden">
+        <div class="modal-content kiosk-content">
+            <h2 id="kiosk-greeting">Hello!</h2>
+            <p id="kiosk-action-text" style="font-size: 1.2rem; margin-bottom: 15px; color: var(--accent-yellow);">Checking status...</p>
+            
+            <div id="kiosk-out-options" class="hidden">
+                <p style="margin-bottom: 10px; color: var(--text-muted);">Quick Status:</p>
+                <div class="quick-btns">
+                    <button class="btn-quick" data-val="Lunch">🍔 Lunch</button>
+                    <button class="btn-quick" data-val="Appointment">📅 Appt</button>
+                    <button class="btn-quick" data-val="Meeting">🤝 Meeting</button>
+                    <button class="btn-quick" data-val="TDY">✈️ TDY</button>
+                </div>
+                <p style="margin: 10px 0; color: var(--text-muted);">Or type custom:</p>
+                <input type="text" id="kiosk-custom-comment" placeholder="Tap here for keyboard..." autocomplete="off">
+            </div>
+
+            <div class="kiosk-footer" style="margin-top: 15px;">
+                <button id="kiosk-skip" class="btn-submit" style="width: 100%; padding: 12px; font-size: 1.1rem;">Finish & Submit</button>
+            </div>
+            
+            <div class="progress-container" style="margin-top: 15px; width: 100%; height: 6px; background: #1e1e24; border-radius: 3px; overflow: hidden;">
+                <div id="kiosk-progress" style="width: 100%; height: 100%; background: var(--accent-yellow); transition: width 0.1s linear;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
