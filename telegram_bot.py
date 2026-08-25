@@ -8,7 +8,7 @@ from hermes_ai import parse_status_message, parse_onboarding_name
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "YOUR_TELEGRAM_TOKEN")
 BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
-DB_FILE = "/home/margun/in-out_board/inout.db"
+DB_FILE = os.environ.get("DB_PATH", "inout.db")
 
 waiting_for_comment = {} # {chat_id: {"timestamp": ...}}
 onboarding_state = {} # {chat_id: {"step": "name", "name": "", "email": ""}}

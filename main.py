@@ -8,7 +8,8 @@ import os
 from contextlib import asynccontextmanager
 from collections import defaultdict
 
-DB_FILE = "inout.db"
+import os
+DB_FILE = os.environ.get("DB_PATH", "inout.db")
 
 def get_db():
     conn = sqlite3.connect(DB_FILE, timeout=10.0)
