@@ -4,6 +4,8 @@ A modern, AI-powered digital In/Out board designed for professional environments
 
 Instead of employees clicking buttons or using specific commands, they can simply message the bot conversationally (e.g., "Running late due to traffic, I'll be in around 0930"). The bot leverages Meta Llama 3.1 (via DeepInfra, currently $0.02 per million tokens) to extract their status, location, and a professional comment, instantly updating the Kiosk display.
 
+![Hermes In/Out Board Dashboard](assets/InOutBoard.png)
+
 ## Features
 - **AI Natural Language Processing**: Powered by Llama 3.1 to strip conversational filler and extract structured data.
 - **Real-time Kiosk Display**: A sleek, auto-updating web dashboard ideal for a TV or Raspberry Pi display monitor.
