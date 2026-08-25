@@ -29,16 +29,30 @@ def init_db():
                 comment TEXT,
                 last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 telegram_chat_id TEXT,
-                group_name TEXT DEFAULT 'Unassigned'
+                group_name TEXT DEFAULT 'Unassigned',
+                rank TEXT,
+                sort_weight INTEGER DEFAULT 50
             )
         """)
-        # Ensure group_name column exists if upgrading old db
-        try:
-            conn.execute("ALTER TABLE users ADD COLUMN group_name TEXT DEFAULT 'Unassigned'")
-            conn.commit()
-        except sqlite3.OperationalError:
-            pass # column exists
+        # Ensure new columns exist if upgrading old db
+        for col in [
+            "group_name TEXT DEFAULT 'Unassigned'",
+            "rank TEXT",
+            "sort_weight INTEGER DEFAULT 50"
+        ]:
+            try:
+                conn.execute(f"ALTER TABLE users ADD COLUMN {col}")
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass # column exists
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS groups (
+                name TEXT PRIMARY KEY,
+                sort_index INTEGER DEFAULT 99
+            )
+        """)
+        
         conn.execute("""
             CREATE TABLE IF NOT EXISTS app_settings (
                 id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -68,7 +82,7 @@ def index(request: Request):
         if not settings:
             return RedirectResponse(url="/setup", status_code=status.HTTP_302_FOUND)
         
-        users = conn.execute("SELECT * FROM users ORDER BY name").fetchall()
+        users = conn.execute("SELECT u.*, IFNULL(g.sort_index, 99) as group_sort FROM users u LEFT JOIN groups g ON u.group_name = g.name ORDER BY group_sort ASC, u.sort_weight ASC, u.name ASC").fetchall()
         
         grouped_users = defaultdict(list)
         for u in users:
@@ -119,7 +133,7 @@ def setup_submit(org_name: str = Form(...)):
 @app.get("/api/users")
 def get_users():
     with get_db() as conn:
-        users = conn.execute("SELECT * FROM users ORDER BY name").fetchall()
+        users = conn.execute("SELECT u.*, IFNULL(g.sort_index, 99) as group_sort FROM users u LEFT JOIN groups g ON u.group_name = g.name ORDER BY group_sort ASC, u.sort_weight ASC, u.name ASC").fetchall()
         return [dict(u) for u in users]
 
 @app.get("/api/settings")

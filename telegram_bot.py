@@ -4,7 +4,7 @@ import sqlite3
 import os
 import json
 import uuid
-from hermes_ai import parse_status_message
+from hermes_ai import parse_status_message, parse_onboarding_name
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "YOUR_TELEGRAM_TOKEN")
 BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
@@ -13,6 +13,17 @@ DB_FILE = "/home/margun/in-out_board/inout.db"
 waiting_for_comment = {} # {chat_id: {"timestamp": ...}}
 onboarding_state = {} # {chat_id: {"step": "name", "name": "", "email": ""}}
 group_confirm_state = {} # {chat_id: {"requested_group": "xyz", "is_onboarding": bool}}
+
+
+def get_sort_weight(rank: str) -> int:
+    r = rank.upper().strip().replace(".", "")
+    weights = {
+        "GEN": 1, "LTG": 2, "MG": 3, "BG": 4, "COL": 5, "LTC": 6, "MAJ": 7, "CPT": 8, "1LT": 9, "2LT": 10,
+        "CW5": 11, "CW4": 12, "CW3": 13, "CW2": 14, "WO1": 15,
+        "SMA": 16, "CSM": 17, "SGM": 17, "1SG": 18, "MSG": 18, "SFC": 19, "SSG": 20, "SGT": 21, "CPL": 22, "SPC": 22, "PFC": 23, "PV2": 24, "PV1": 24,
+        "MR": 30, "MS": 30, "MRS": 30, "CIV": 30
+    }
+    return weights.get(r, 50)
 
 def get_db():
     conn = sqlite3.connect(DB_FILE, timeout=10.0)
@@ -55,7 +66,7 @@ def check_timeouts():
     for chat_id in to_remove:
         del waiting_for_comment[chat_id]
 
-def create_account(chat_id, email, name, group_name):
+def create_account(chat_id, email, name, group_name, rank, sort_weight):
     uid = str(uuid.uuid4())[:8]
     with get_db() as conn:
         existing = conn.execute("SELECT id FROM users WHERE email = ? COLLATE NOCASE", (email,)).fetchone()
@@ -99,7 +110,7 @@ def process_message(chat_id, text):
             new_group = text_clean
             if conf_state.get("is_onboarding"):
                 state = onboarding_state[chat_id]
-                create_account(chat_id, state["email"], state["name"], new_group)
+                create_account(chat_id, state["email"], state["name"], new_group, state.get("rank", ""), state.get("sort_weight", 50))
                 send_message(chat_id, f"🎉 You're all set, {state['name']}!\n\nYou've been added to the **{new_group}** group.")
                 del onboarding_state[chat_id]
             else:
@@ -120,14 +131,14 @@ def process_message(chat_id, text):
         state = onboarding_state[chat_id]
         
         if state["step"] == "name":
-            parts = text_clean.split(" ", 1)
-            if len(parts) > 1:
-                formatted_name = f"{parts[0].upper()} {parts[1].title()}"
-            else:
-                formatted_name = text_clean.upper()
-            state["name"] = formatted_name
+            parsed_name = parse_onboarding_name(text_clean)
+            state["rank"] = parsed_name.get("rank", "")
+            state["name"] = parsed_name.get("name", text_clean)
+            state["sort_weight"] = get_sort_weight(state["rank"])
+            
+            display_name = f"{state['rank']} {state['name']}".strip()
             state["step"] = "email"
-            send_message(chat_id, f"Got it, {formatted_name}. Now, what is your **work email address**?")
+            send_message(chat_id, f"Got it, {display_name}. Now, what is your **work email address**?")
             return
             
         if state["step"] == "email":
@@ -147,7 +158,7 @@ def process_message(chat_id, text):
                 
             if user_count == 0:
                 # First user! Bypass PIN
-                create_account(chat_id, state["email"], state["name"], group_name)
+                create_account(chat_id, state["email"], state["name"], group_name, state.get("rank", ""), state.get("sort_weight", 50))
                 
                 with get_db() as conn:
                     settings = conn.execute("SELECT onboarding_pin FROM app_settings WHERE id = 1").fetchone()
@@ -175,7 +186,7 @@ def process_message(chat_id, text):
                     send_message(chat_id, f"⚠️ The group '**{group_name}**' doesn't exist yet.\n\nAre you sure you want to create a new group? (Reply 'Yes' to create it, 'No' to cancel, or type the correct group name).")
                     return
                 
-                create_account(chat_id, state["email"], state["name"], group_name)
+                create_account(chat_id, state["email"], state["name"], group_name, state.get("rank", ""), state.get("sort_weight", 50))
                 send_message(chat_id, f"🎉 You're all set, {state['name']}!\n\nYou've been added to the **{group_name}** group. You can now text me your status updates!")
                 del onboarding_state[chat_id]
             else:
@@ -267,6 +278,21 @@ def process_message(chat_id, text):
             send_message(chat_id, f"✅ Unit/Organization name successfully updated to **{new_org}** by {user['name']}.")
             return
             
+        
+        if action == "update_group_order":
+            target_groups = parsed_data.get("target_groups", [])
+            if not target_groups:
+                send_message(chat_id, "❌ I didn't catch the list of groups. Please try again.")
+                return
+            with get_db() as conn:
+                conn.execute("DELETE FROM groups")
+                for i, g in enumerate(target_groups):
+                    conn.execute("INSERT INTO groups (name, sort_index) VALUES (?, ?)", (g, i + 1))
+                conn.commit()
+            send_message(chat_id, f"✅ Group order successfully updated by {user['name']}:
+" + ", ".join(target_groups))
+            return
+
         if action == "ignore":
             send_message(chat_id, "❌ I can only process In/Out Board status updates and administrative commands. Please try again with a valid request.")
             return

@@ -70,14 +70,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderTables(users) {
         boardsContainer.innerHTML = '';
-        const groups = {};
+        const groups = new Map();
         users.forEach(u => {
             const g = u.group_name || "Unassigned";
-            if (!groups[g]) groups[g] = [];
-            groups[g].push(u);
+            if (!groups.has(g)) groups.set(g, []);
+            groups.get(g).push(u);
         });
 
-        for (const [groupName, members] of Object.entries(groups)) {
+        for (const [groupName, members] of groups.entries()) {
             let inCount = 0;
             let outCount = 0;
             let tbodyHtml = '';
@@ -88,17 +88,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const statusIcon = user.status === 'in' ? '<i class="fa-solid fa-circle"></i> IN' : '<i class="fa-solid fa-circle"></i> OUT';
                 const locationIcon = user.location === '--' ? '' : '<i class="fa-solid fa-building"></i> ';
+                const rankDisplay = user.rank ? escapeHtml(user.rank) + ' ' : '';
 
                 tbodyHtml += `
                     <tr>
-                        <td><strong>${escapeHtml(user.name)}</strong></td>
+                        <td><strong>${rankDisplay}${escapeHtml(user.name)}</strong></td>
                         <td><span class="status-badge ${user.status}">${statusIcon}</span></td>
                         <td><div class="location-cell">${locationIcon}${escapeHtml(user.location)}</div></td>
                         <td class="comment-cell">${escapeHtml(user.comment)}</td>
                     </tr>
                 `;
             });
-
             const section = document.createElement('section');
             section.className = 'panel board-panel';
             section.style.marginBottom = '20px';

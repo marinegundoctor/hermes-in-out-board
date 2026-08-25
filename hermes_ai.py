@@ -27,6 +27,7 @@ def parse_status_message(user_message: str) -> dict:
        - If they ask to update the announcement, news, or board message, set "action" to "update_announcement". Extract "announcement_title" and "announcement_body". If they don't provide the new title/body in the same message, set both to "--" (DO NOT invent or guess them).
        - If they ask to change the onboarding PIN or password, set "action" to "update_pin" and extract the new PIN as a string into "target_group".
        - If they ask to change the unit name, organization name, or company name, set "action" to "update_org_name" and extract the new name into "target_group".
+       - If they ask to set, adjust, or change the group order (e.g., "Set group order to Command, Admin, Operations"), set "action" to "update_group_order" and extract the list of groups as a JSON array into "target_groups".
        - Otherwise, set "action" to "update_status".
     2. Status must be "in" or "out". 
        - ONLY mark "in" if they explicitly state they are back at their desk, "in the office", "returned", or "arriving" at home base.
@@ -47,8 +48,9 @@ def parse_status_message(user_message: str) -> dict:
     
     Respond ONLY with a valid JSON object matching this schema, with no markdown formatting or extra text:
     {
-        "action": "update_status", "change_group", "update_announcement", or "update_pin",
+        "action": "update_status", "change_group", "update_announcement", "update_pin", "update_org_name", "update_group_order", or "ignore", 
         "target_group": "string" (or null) (Use this field for the new PIN if action is update_pin),
+        "target_groups": ["string1", "string2"] (only used for update_group_order),
         "announcement_title": "string" (or null),
         "announcement_body": "string" (or null),
         "status": "in" or "out",
@@ -95,3 +97,35 @@ if __name__ == "__main__":
         print(f"\nUser: {msg}")
         result = parse_status_message(msg)
         print(f"Hermes parsed: {json.dumps(result, indent=2)}")
+
+def parse_onboarding_name(user_message: str) -> dict:
+    """
+    Extracts rank and name from user string.
+    """
+    system_prompt = """
+    You extract military ranks and names from a user's input.
+    If they provide a rank, put it in 'rank'. Put the rest of their name in 'name'.
+    If they provide no rank, leave 'rank' as an empty string.
+    Respond ONLY with a valid JSON object matching this schema:
+    {
+        "rank": "string",
+        "name": "string"
+    }
+    """
+    try:
+        response = client.chat.completions.create(
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.0,
+            timeout=10.0
+        )
+        return json.loads(response.choices[0].message.content)
+    except Exception as e:
+        parts = user_message.split(" ", 1)
+        if len(parts) > 1:
+            return {"rank": parts[0].upper(), "name": parts[1].title()}
+        return {"rank": "", "name": user_message.title()}
