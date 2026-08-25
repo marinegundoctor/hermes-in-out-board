@@ -289,8 +289,7 @@ def process_message(chat_id, text):
                 for i, g in enumerate(target_groups):
                     conn.execute("INSERT INTO groups (name, sort_index) VALUES (?, ?)", (g, i + 1))
                 conn.commit()
-            send_message(chat_id, f"✅ Group order successfully updated by {user['name']}:
-" + ", ".join(target_groups))
+            send_message(chat_id, f"✅ Group order successfully updated by {user['name']}:\n" + ", ".join(target_groups))
             return
 
         if action == "ignore":
