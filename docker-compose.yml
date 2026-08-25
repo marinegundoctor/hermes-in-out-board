@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    image: marinegundoctor/hermes-in-out-board:latest
     container_name: hermes_api
     command: uvicorn main:app --host 0.0.0.0 --port 8000
     ports:
@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
     
   bot:
-    build: .
+    image: marinegundoctor/hermes-in-out-board:latest
     container_name: hermes_bot
     command: python telegram_bot.py
     volumes:

@@ -35,7 +35,7 @@ Instead of employees clicking buttons or using specific commands, they can simpl
 3. **Start the Application:**
    Run the following command to build the image and start both the API and the Telegram Bot in the background:
    ```bash
-   docker-compose up -d --build
+   docker-compose up -d
    ```
 
 4. **Access the Dashboard:**
