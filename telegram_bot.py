@@ -66,18 +66,18 @@ def check_timeouts():
     for chat_id in to_remove:
         del waiting_for_comment[chat_id]
 
-def create_account(chat_id, email, name, group_name, rank, sort_weight):
+def create_account(chat_id, email, name, group_name, rank="", sort_weight=50):
     uid = str(uuid.uuid4())[:8]
     with get_db() as conn:
         existing = conn.execute("SELECT id FROM users WHERE email = ? COLLATE NOCASE", (email,)).fetchone()
         if existing:
-            conn.execute("UPDATE users SET telegram_chat_id = ?, name = ?, group_name = ? WHERE id = ?", 
-                         (str(chat_id), name, group_name, existing["id"]))
+            conn.execute("UPDATE users SET telegram_chat_id = ?, name = ?, group_name = ?, rank = ?, sort_weight = ? WHERE id = ?", 
+                         (str(chat_id), name, group_name, rank, sort_weight, existing["id"]))
         else:
             conn.execute("""
-                INSERT INTO users (email, name, uid, telegram_chat_id, group_name, status, location, comment) 
-                VALUES (?, ?, ?, ?, ?, 'out', '--', '--')
-            """, (email, name, uid, str(chat_id), group_name))
+                INSERT INTO users (email, name, uid, telegram_chat_id, group_name, rank, sort_weight, status, location, comment) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'out', '--', '--')
+            """, (email, name, uid, str(chat_id), group_name, rank, sort_weight))
         conn.commit()
 
 def process_message(chat_id, text):
@@ -93,7 +93,7 @@ def process_message(chat_id, text):
             group = conf_state["requested_group"]
             if conf_state.get("is_onboarding"):
                 state = onboarding_state[chat_id]
-                create_account(chat_id, state["email"], state["name"], group)
+                create_account(chat_id, state["email"], state["name"], group, state.get("rank", ""), state.get("sort_weight", 50))
                 send_message(chat_id, f"🎉 You're all set, {state['name']}!\n\nYou've been added to the **{group}** group.")
                 del onboarding_state[chat_id]
             else:
