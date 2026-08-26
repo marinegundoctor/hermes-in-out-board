@@ -21,10 +21,14 @@
                 <span id="banner-org-name">{{ settings.org_name }}</span>
             </div>
 
-            <div class="nav-right">
+            <div class="nav-right" style="display: flex; gap: 15px; align-items: center;">
+                <div class="status-indicator">
+                    <div class="dot active" id="internet-status-dot"></div>
+                    <span id="internet-status-text">Internet</span>
+                </div>
                 <div class="status-indicator">
                     <div class="dot active" id="backend-status-dot"></div>
-                    <span id="backend-status-text">Backend Active</span>
+                    <span id="backend-status-text">Backend</span>
                 </div>
             </div>
         </nav>

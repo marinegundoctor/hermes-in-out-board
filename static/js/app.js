@@ -244,3 +244,23 @@ document.addEventListener('DOMContentLoaded', () => {
     loadData();
     setInterval(loadData, 5000);
 });
+
+    window.addEventListener('online', () => {
+        const netDot = document.getElementById('internet-status-dot');
+        const netText = document.getElementById('internet-status-text');
+        if (netDot && netText) {
+            netDot.style.background = 'var(--status-in)';
+            netDot.style.boxShadow = '0 0 8px var(--status-in)';
+            netText.style.color = 'var(--text-muted)';
+        }
+    });
+
+    window.addEventListener('offline', () => {
+        const netDot = document.getElementById('internet-status-dot');
+        const netText = document.getElementById('internet-status-text');
+        if (netDot && netText) {
+            netDot.style.background = 'var(--status-out)';
+            netDot.style.boxShadow = '0 0 8px var(--status-out)';
+            netText.style.color = 'var(--status-out)';
+        }
+    });

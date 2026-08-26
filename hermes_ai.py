@@ -68,7 +68,7 @@ def parse_status_message(user_message: str) -> dict:
             ],
             response_format={"type": "json_object"},
             temperature=0.0,
-            timeout=10.0
+            timeout=25.0
         )
         
         result_text = response.choices[0].message.content
@@ -77,9 +77,11 @@ def parse_status_message(user_message: str) -> dict:
     except Exception as e:
         print(f"AI Parsing Error: {e}")
         # Fallback if the AI fails
+        msg = user_message.lower().strip()
+        status = "in" if msg in ["in", "i'm in", "im in", "back", "here"] else "out"
         return {
-            "status": "out", 
-            "location": "Unknown", 
+            "status": status, 
+            "location": "Unknown" if status == "out" else "--", 
             "comment": user_message
         }
 
@@ -121,7 +123,7 @@ def parse_onboarding_name(user_message: str) -> dict:
             ],
             response_format={"type": "json_object"},
             temperature=0.0,
-            timeout=10.0
+            timeout=25.0
         )
         return json.loads(response.choices[0].message.content)
     except Exception as e:
