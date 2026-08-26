@@ -37,6 +37,20 @@ document.addEventListener('DOMContentLoaded', () => {
     updateClocks();
 
     async function loadData() {
+        // Check Internet Status
+        const netDot = document.getElementById('internet-status-dot');
+        const netText = document.getElementById('internet-status-text');
+        if (netDot && netText) {
+            if (navigator.onLine) {
+                netDot.style.background = 'var(--status-in)';
+                netDot.style.boxShadow = '0 0 8px var(--status-in)';
+                netText.style.color = 'var(--text-muted)';
+            } else {
+                netDot.style.background = 'var(--status-out)';
+                netDot.style.boxShadow = '0 0 8px var(--status-out)';
+                netText.style.color = 'var(--status-out)';
+            }
+        }
         try {
             const [usersRes, settingsRes] = await Promise.all([
                 fetch('/api/users'),
@@ -56,14 +70,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             document.getElementById('backend-status-dot').style.background = 'var(--status-in)';
             document.getElementById('backend-status-dot').style.boxShadow = '0 0 8px var(--status-in)';
-            document.getElementById('backend-status-text').innerText = 'Backend Active';
+            document.getElementById('backend-status-text').innerText = 'Backend';
             document.getElementById('backend-status-text').style.color = 'var(--text-muted)';
             
         } catch (err) {
             console.error("Failed to load data:", err);
             document.getElementById('backend-status-dot').style.background = 'var(--status-out)';
             document.getElementById('backend-status-dot').style.boxShadow = '0 0 8px var(--status-out)';
-            document.getElementById('backend-status-text').innerText = 'Backend Offline';
+            document.getElementById('backend-status-text').innerText = 'Backend';
             document.getElementById('backend-status-text').style.color = 'var(--status-out)';
         }
     }
