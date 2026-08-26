@@ -218,7 +218,7 @@ def process_message(chat_id, text):
         return
 
     # AI Parsing
-    send_message(chat_id, "🤔 Parsing your message...")
+    # Removed to save network roundtrip
     
     try:
         parsed_data = parse_status_message(text)
