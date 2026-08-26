@@ -42,9 +42,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const netText = document.getElementById('internet-status-text');
         if (netDot && netText) {
             if (navigator.onLine) {
-                netDot.style.background = 'var(--status-in)';
-                netDot.style.boxShadow = '0 0 8px var(--status-in)';
-                netText.style.color = 'var(--text-muted)';
+                let isSlow = false;
+                if (navigator.connection && navigator.connection.effectiveType) {
+                    const et = navigator.connection.effectiveType;
+                    if (et === 'slow-2g' || et === '2g' || et === '3g') {
+                        isSlow = true;
+                    }
+                }
+                
+                if (isSlow) {
+                    netDot.style.background = 'var(--accent-yellow)';
+                    netDot.style.boxShadow = '0 0 8px var(--accent-yellow)';
+                    netText.style.color = 'var(--accent-yellow)';
+                } else {
+                    netDot.style.background = 'var(--status-in)';
+                    netDot.style.boxShadow = '0 0 8px var(--status-in)';
+                    netText.style.color = 'var(--text-muted)';
+                }
             } else {
                 netDot.style.background = 'var(--status-out)';
                 netDot.style.boxShadow = '0 0 8px var(--status-out)';
