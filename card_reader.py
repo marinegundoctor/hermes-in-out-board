@@ -1,5 +1,6 @@
 import time
-import requests
+import urllib.request
+import json
 import sys
 
 try:
@@ -23,7 +24,10 @@ class PrintObserver(CardObserver):
                     print(f"Card inserted: {uid}")
                     try:
                         # Send to local API
-                        requests.post('http://localhost:8000/api/scans/pending', json={"card_id": uid}, timeout=2)
+                        
+                        req = urllib.request.Request('http://localhost:8000/api/scans/pending', data=json.dumps({"card_id": uid}).encode('utf-8'), headers={'Content-Type': 'application/json'})
+                        urllib.request.urlopen(req, timeout=2)
+
                     except Exception as e:
                         print(f"API Error: {e}")
             except Exception as e:

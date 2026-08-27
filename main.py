@@ -41,7 +41,7 @@ def init_db():
             "group_name TEXT DEFAULT 'Unassigned'",
             "rank TEXT",
             "sort_weight INTEGER DEFAULT 50",
-            "card_id TEXT UNIQUE"
+            "card_id TEXT"
         ]:
 
             try:
