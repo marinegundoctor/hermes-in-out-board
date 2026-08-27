@@ -301,6 +301,10 @@ let cardState = 'IDLE'; // IDLE, REGISTER_EMAIL, REGISTER_NAME, QUICK_PICK, COMM
 let activeCardId = null;
 let currentQuickPick = null;
 let commentTimeout = null;
+let newUserName = '';
+let newUserRank = '';
+let newUserEmail = '';
+let availableGroups = [];
 
 const QUICK_PICK_MAP = {
     '0': { loc: '--', needsComment: false },
@@ -388,6 +392,21 @@ function cancelCard() {
         });
     }
     closeCardModal();
+}
+
+
+function submitRegistration(groupName) {
+    fetch('/api/scans/register_new', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({card_id: activeCardId, email: newUserEmail, name: newUserName, rank: newUserRank, group: groupName})
+    }).then(res => res.json()).then(data => {
+        if (data.success) {
+            const content = document.getElementById('smartcard-content');
+            content.innerHTML = `<h2 style="color:var(--status-in);"><i class="fa-solid fa-check"></i> Account Created & Clocked IN!</h2>`;
+            setTimeout(() => { closeCardModal(); loadData(); }, 2000);
+        }
+    });
 }
 
 function closeCardModal() {
@@ -517,34 +536,73 @@ document.addEventListener('keydown', (e) => {
                     setTimeout(() => { closeCardModal(); loadData(); }, 2000);
                 } else if (data.needs_name) {
                     cardState = 'REGISTER_NAME';
+                    newUserEmail = email;
                     const content = document.getElementById('smartcard-content');
                     content.innerHTML = `
-                        <h2>Email Not Found</h2>
-                        <p style="margin-bottom: 10px;">Please enter your <b>Full Name</b> to create a new account, and press <b>Enter</b>:</p>
-                        <input type="text" id="card-name" placeholder="John Doe" style="font-size:1.2rem; padding: 10px; width: 100%; box-sizing: border-box;">
-                        <input type="hidden" id="card-email-hidden" value="${escapeHtml(email)}">
+                        <h2 style="margin-bottom: 10px;">Email Not Found</h2>
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <input type="text" id="card-rank" placeholder="Rank (Optional)" style="font-size:1.4rem; padding: 10px; width:40%; box-sizing: border-box;">
+                            <input type="text" id="card-name" placeholder="Full Name (Req)" style="font-size:1.4rem; padding: 10px; width:60%; box-sizing: border-box;" required>
+                        </div>
+                        <p style="color: #ccc; font-size: 1.2rem;">Press <b>Tab</b> to switch, <b>Enter</b> to continue.</p>
                     `;
-                    setTimeout(() => document.getElementById('card-name').focus(), 100);
+                    setTimeout(() => document.getElementById('card-rank').focus(), 100);
                 }
             });
         }
     } else if (cardState === 'REGISTER_NAME') {
         if (e.key === 'Enter') {
-            const name = document.getElementById('card-name').value;
-            const email = document.getElementById('card-email-hidden').value;
-            if (!name) return;
+            const name = document.getElementById('card-name').value.trim();
+            const rank = document.getElementById('card-rank').value.trim();
+            if (!name) {
+                document.getElementById('card-name').style.border = '2px solid red';
+                return;
+            }
+            newUserName = name;
+            newUserRank = rank;
             
-            fetch('/api/scans/register_new', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({card_id: activeCardId, email: email, name: name})
-            }).then(res => res.json()).then(data => {
-                if (data.success) {
-                    const content = document.getElementById('smartcard-content');
-                    content.innerHTML = `<h2 style="color:var(--status-in);"><i class="fa-solid fa-check"></i> Account Created!</h2>`;
-                    setTimeout(() => { closeCardModal(); loadData(); }, 2000);
-                }
+            availableGroups = Array.from(document.querySelectorAll('.group-header h3'))
+                                   .map(h => h.innerText)
+                                   .filter(g => g !== 'Unassigned');
+            availableGroups = [...new Set(availableGroups)];
+            
+            cardState = 'REGISTER_GROUP';
+            
+            let groupHtml = `<h2 style="font-size: 2rem;">Select Group</h2>
+                             <div style="display: flex; flex-direction: column; gap: 8px; font-size: 1.2rem; color: #ccc;">`;
+            
+            availableGroups.forEach((g, idx) => {
+                groupHtml += `<div><b style="color:var(--accent-yellow);">${idx + 1}</b> - ${escapeHtml(g)}</div>`;
             });
+            groupHtml += `<div><b style="color:var(--accent-yellow);">0</b> - Create New Group</div>
+                          </div>
+                          <p style="margin-top:15px; color:#888; font-size:1.1rem;">Press option number.</p>`;
+            
+            document.getElementById('smartcard-content').innerHTML = groupHtml;
+        }
+    } else if (cardState === 'REGISTER_GROUP') {
+        if (e.key === '0') {
+            cardState = 'REGISTER_GROUP_NEW';
+            document.getElementById('smartcard-content').innerHTML = `
+                <h2 style="margin-bottom: 10px;">Create New Group</h2>
+                <input type="text" id="card-group-new" placeholder="New Group Name" style="font-size:1.4rem; padding: 10px; width:100%; box-sizing: border-box;" required>
+                <p style="color: #ccc; font-size: 1.2rem; margin-top: 15px;">Press <b>Enter</b> to submit & Clock IN.</p>
+            `;
+            setTimeout(() => document.getElementById('card-group-new').focus(), 100);
+        } else {
+            const idx = parseInt(e.key);
+            if (!isNaN(idx) && idx >= 1 && idx <= availableGroups.length) {
+                submitRegistration(availableGroups[idx - 1]);
+            }
+        }
+    } else if (cardState === 'REGISTER_GROUP_NEW') {
+        if (e.key === 'Enter') {
+            const grp = document.getElementById('card-group-new').value.trim();
+            if (!grp) {
+                document.getElementById('card-group-new').style.border = '2px solid red';
+                return;
+            }
+            submitRegistration(grp);
         }
     }
 });

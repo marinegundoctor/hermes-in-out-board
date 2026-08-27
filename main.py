@@ -202,6 +202,8 @@ class RegisterNewUserRequest(BaseModel):
     card_id: str
     email: str
     name: str
+    rank: str = ""
+    group: str = "Unassigned" 
 
 @app.post("/api/scans/register_new")
 def register_new_user(req: RegisterNewUserRequest):
@@ -210,9 +212,9 @@ def register_new_user(req: RegisterNewUserRequest):
     uid = str(uuid.uuid4())[:8]
     with get_db() as conn:
         conn.execute("""
-            INSERT INTO users (email, name, uid, group_name, status, location, comment, card_id) 
-            VALUES (?, ?, ?, 'Unassigned', 'out', '--', '--', ?)
-        """, (req.email, req.name, uid, req.card_id))
+            INSERT INTO users (email, name, rank, uid, group_name, status, location, comment, card_id) 
+            VALUES (?, ?, ?, ?, ?, 'in', '--', '--', ?)
+        """, (req.email, req.name, req.rank, uid, req.group, req.card_id))
         conn.commit()
     if pending_card_scan and pending_card_scan.get("card_id") == req.card_id:
         pending_card_scan = None
