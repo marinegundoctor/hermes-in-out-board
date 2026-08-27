@@ -1,3 +1,8 @@
+
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
 document.addEventListener('DOMContentLoaded', () => {
     const boardsContainer = document.getElementById('boards-container');
     const simBtn = document.getElementById('dev-sim-btn');
@@ -164,10 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function escapeHtml(unsafe) {
-        if (!unsafe) return '';
-        return String(unsafe).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
+
 
     simBtn.addEventListener('click', () => {
         simModal.classList.remove('hidden');
@@ -363,7 +365,7 @@ function handleCardScanned(data) {
         cardState = 'REGISTER_EMAIL';
         content.innerHTML = `
             <h2>New Card Detected</h2>
-            <p style="margin-bottom: 10px;">Please enter your <b>Work Email</b> to link your account:</p>
+            <p style="margin-bottom: 10px;">Please enter your <b>Work Email</b> to link your account, and press <b>Enter</b>:</p>
             <input type="email" id="card-email" placeholder="john.doe@example.com" style="font-size:1.2rem; padding: 10px;">
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="cancelCard()">Cancel</button>
@@ -484,7 +486,7 @@ document.addEventListener('keydown', (e) => {
                     const content = document.getElementById('smartcard-content');
                     content.innerHTML = `
                         <h2>Email Not Found</h2>
-                        <p style="margin-bottom: 10px;">Please enter your <b>Full Name</b> to create a new account:</p>
+                        <p style="margin-bottom: 10px;">Please enter your <b>Full Name</b> to create a new account, and press <b>Enter</b>:</p>
                         <input type="text" id="card-name" placeholder="John Doe" style="font-size:1.2rem; padding: 10px;">
                         <input type="hidden" id="card-email-hidden" value="${escapeHtml(email)}">
                     `;
