@@ -35,12 +35,15 @@ def init_db():
                 sort_weight INTEGER DEFAULT 50
             )
         """)
+        
         # Ensure new columns exist if upgrading old db
         for col in [
             "group_name TEXT DEFAULT 'Unassigned'",
             "rank TEXT",
-            "sort_weight INTEGER DEFAULT 50"
+            "sort_weight INTEGER DEFAULT 50",
+            "card_id TEXT UNIQUE"
         ]:
+
             try:
                 conn.execute(f"ALTER TABLE users ADD COLUMN {col}")
                 conn.commit()
@@ -142,3 +145,102 @@ def get_settings():
     with get_db() as conn:
         settings = conn.execute("SELECT * FROM app_settings WHERE id = 1").fetchone()
         return dict(settings) if settings else {}
+
+
+# --- SMART CARD ENDPOINTS ---
+import time
+pending_card_scan = None
+
+class PendingScan(BaseModel):
+    card_id: str
+
+@app.post("/api/scans/pending")
+def set_pending_scan(scan: PendingScan):
+    global pending_card_scan
+    pending_card_scan = {
+        "card_id": scan.card_id,
+        "timestamp": time.time()
+    }
+    return {"success": True}
+
+@app.get("/api/scans/pending")
+def get_pending_scan():
+    global pending_card_scan
+    if pending_card_scan:
+        if time.time() - pending_card_scan["timestamp"] > 30:
+            pending_card_scan = None
+        else:
+            # Look up if user exists
+            with get_db() as conn:
+                user = conn.execute("SELECT * FROM users WHERE card_id = ?", (pending_card_scan["card_id"],)).fetchone()
+                if user:
+                    pending_card_scan["user"] = dict(user)
+                else:
+                    pending_card_scan["user"] = None
+    return pending_card_scan or {}
+
+class RegisterCardRequest(BaseModel):
+    card_id: str
+    email: str
+
+@app.post("/api/scans/register")
+def register_card(req: RegisterCardRequest):
+    global pending_card_scan
+    with get_db() as conn:
+        user = conn.execute("SELECT * FROM users WHERE email = ? COLLATE NOCASE", (req.email,)).fetchone()
+        if user:
+            conn.execute("UPDATE users SET card_id = ? WHERE id = ?", (req.card_id, user["id"]))
+            conn.commit()
+            if pending_card_scan and pending_card_scan.get("card_id") == req.card_id:
+                pending_card_scan = None
+            return {"success": True, "message": f"Card linked to {user['name']}!"}
+        else:
+            # Need name
+            return {"success": False, "needs_name": True}
+
+class RegisterNewUserRequest(BaseModel):
+    card_id: str
+    email: str
+    name: str
+
+@app.post("/api/scans/register_new")
+def register_new_user(req: RegisterNewUserRequest):
+    global pending_card_scan
+    import uuid
+    uid = str(uuid.uuid4())[:8]
+    with get_db() as conn:
+        conn.execute("""
+            INSERT INTO users (email, name, uid, group_name, status, location, comment, card_id) 
+            VALUES (?, ?, ?, 'Unassigned', 'out', '--', '--', ?)
+        """, (req.email, req.name, uid, req.card_id))
+        conn.commit()
+    if pending_card_scan and pending_card_scan.get("card_id") == req.card_id:
+        pending_card_scan = None
+    return {"success": True}
+
+class CardActionRequest(BaseModel):
+    card_id: str
+    action: str  # 'IN' or 'OUT'
+    location: str = ""
+    comment: str = ""
+
+@app.post("/api/scans/action")
+def resolve_card_action(req: CardActionRequest):
+    global pending_card_scan
+    with get_db() as conn:
+        if req.action == 'IN':
+            conn.execute("UPDATE users SET status = 'in', location = '--', comment = '--', last_updated = CURRENT_TIMESTAMP WHERE card_id = ?", (req.card_id,))
+        else:
+            conn.execute("UPDATE users SET status = 'out', location = ?, comment = ?, last_updated = CURRENT_TIMESTAMP WHERE card_id = ?", (req.location, req.comment, req.card_id))
+        conn.commit()
+    if pending_card_scan and pending_card_scan.get("card_id") == req.card_id:
+        pending_card_scan = None
+    return {"success": True}
+
+@app.post("/api/scans/cancel")
+def cancel_scan(scan: PendingScan):
+    global pending_card_scan
+    if pending_card_scan and pending_card_scan.get("card_id") == scan.card_id:
+        pending_card_scan = None
+    return {"success": True}
+
