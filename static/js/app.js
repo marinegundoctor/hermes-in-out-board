@@ -297,19 +297,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // --- SMART CARD LOGIC ---
+let cardState = 'IDLE'; // IDLE, REGISTER_EMAIL, REGISTER_NAME, QUICK_PICK, COMMENT, CUSTOM_LOC
 let activeCardId = null;
-let cardState = 'IDLE'; // IDLE, REGISTER_EMAIL, REGISTER_NAME, QUICK_PICK, COMMENT
-let commentTimeout = null;
 let currentQuickPick = null;
+let commentTimeout = null;
 
 const QUICK_PICK_MAP = {
+    '0': { loc: '--', needsComment: false },
     '1': { loc: 'LUNCH', needsComment: false },
     '2': { loc: 'SUPPLY', needsComment: true },
     '3': { loc: 'JFHQ', needsComment: true },
     '4': { loc: 'G6', needsComment: true },
     '5': { loc: 'LEAVE', needsComment: true },
     '6': { loc: 'TDY', needsComment: true },
-    '7': { loc: 'Free Text', needsComment: true }
+    '7': { loc: 'Free Text', needsCustom: true }
 };
 
 function pollSmartCard() {
@@ -357,16 +358,19 @@ function handleCardScanned(data) {
                     <div><b style="color:var(--accent-yellow);">5</b> - LEAVE</div>
                     <div><b style="color:var(--accent-yellow);">6</b> - TDY</div>
                     <div><b style="color:var(--accent-yellow);">7</b> - Free Text</div>
+                    <div><b style="color:var(--accent-yellow);">0</b> - End of Day (Blank OUT)</div>
                 </div>
-                <p style="margin-top:15px; color:#888; font-size:0.9rem;">Press ESC to cancel</p>
+                <p style="margin-top:15px; color:#888; font-size:1.1rem;">Press option number, or <b>Enter</b> to end of day.</p>
+                <p style="color:#888; font-size:1.1rem;">Press <b>ESC</b> to cancel.</p>
             `;
         }
     } else {
+        // Unknown card, prompt for email
         cardState = 'REGISTER_EMAIL';
         content.innerHTML = `
             <h2>New Card Detected</h2>
             <p style="margin-bottom: 10px;">Please enter your <b>Work Email</b> to link your account, and press <b>Enter</b>:</p>
-            <input type="email" id="card-email" placeholder="john.doe@example.com" style="font-size:1.2rem; padding: 10px;">
+            <input type="email" id="card-email" placeholder="john.doe@example.com" style="font-size:1.2rem; padding: 10px; width: 100%;">
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="cancelCard()">Cancel</button>
             </div>
@@ -418,21 +422,41 @@ document.addEventListener('keydown', (e) => {
     }
 
     if (cardState === 'QUICK_PICK') {
-        if (QUICK_PICK_MAP[e.key]) {
-            currentQuickPick = QUICK_PICK_MAP[e.key];
-            if (currentQuickPick.needsComment) {
+        let selection = QUICK_PICK_MAP[e.key];
+        
+        // Enter defaults to 0 (End of Day)
+        if (e.key === 'Enter') {
+            selection = QUICK_PICK_MAP['0'];
+        }
+
+        if (selection) {
+            currentQuickPick = selection;
+            
+            if (currentQuickPick.needsCustom) {
+                cardState = 'CUSTOM_LOC';
+                const content = document.getElementById('smartcard-content');
+                content.innerHTML = `
+                    <h2 style="font-size: 2rem; margin-bottom: 10px;">Custom Location</h2>
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" id="custom-loc" placeholder="Enter Location... (Required)" style="font-size:1.4rem; padding: 10px; width:100%; box-sizing: border-box;" required>
+                        <input type="text" id="custom-comment" placeholder="Enter Comment... (Optional)" style="font-size:1.4rem; padding: 10px; width:100%; box-sizing: border-box;">
+                    </div>
+                    <p style="color: #ccc; font-size: 1.2rem;">Press <b>Tab</b> to switch fields, <b>Enter</b> to submit.</p>
+                `;
+                setTimeout(() => document.getElementById('custom-loc').focus(), 100);
+            } else if (currentQuickPick.needsComment) {
                 cardState = 'COMMENT';
                 const content = document.getElementById('smartcard-content');
                 content.innerHTML = `
-                    <h2>Add Comment for ${currentQuickPick.loc}?</h2>
-                    <p style="color: #ccc; margin-bottom:10px;">Press <b>Y</b> to type a comment, or <b>Enter</b> to skip.</p>
+                    <h2 style="font-size: 2rem;">Add Comment for ${currentQuickPick.loc}?</h2>
+                    <p style="color: #ccc; margin-bottom:15px; font-size: 1.4rem;">Press <b>Y</b> to type a comment, or <b>Enter</b> to skip.</p>
                     <div id="comment-box" class="hidden">
-                        <input type="text" id="card-comment" maxlength="140" placeholder="Type comment..." style="font-size:1.2rem; padding: 10px;">
+                        <input type="text" id="card-comment" maxlength="140" placeholder="Type comment..." style="font-size:1.4rem; padding: 10px; width: 100%; box-sizing: border-box;">
                     </div>
-                    <p style="margin-top:15px; color:#888; font-size:0.9rem;" id="timeout-msg">Auto-submitting in 7 seconds...</p>
+                    <p style="margin-top:15px; color:#888; font-size:1.1rem;" id="timeout-msg">Auto-submitting in 10 seconds...</p>
                 `;
                 
-                let timeLeft = 7;
+                let timeLeft = 10;
                 commentTimeout = setInterval(() => {
                     timeLeft--;
                     const msg = document.getElementById('timeout-msg');
@@ -444,8 +468,18 @@ document.addEventListener('keydown', (e) => {
                 }, 1000);
                 
             } else {
-                // Lunch doesn't need comment
+                // Doesn't need comment
                 submitCardAction('OUT', currentQuickPick.loc, '--');
+            }
+        }
+    } else if (cardState === 'CUSTOM_LOC') {
+        if (e.key === 'Enter') {
+            const locInput = document.getElementById('custom-loc').value.trim();
+            const cmtInput = document.getElementById('custom-comment').value.trim();
+            if (locInput) {
+                submitCardAction('OUT', locInput, cmtInput || '--');
+            } else {
+                document.getElementById('custom-loc').style.border = '2px solid red';
             }
         }
     } else if (cardState === 'COMMENT') {
@@ -487,7 +521,7 @@ document.addEventListener('keydown', (e) => {
                     content.innerHTML = `
                         <h2>Email Not Found</h2>
                         <p style="margin-bottom: 10px;">Please enter your <b>Full Name</b> to create a new account, and press <b>Enter</b>:</p>
-                        <input type="text" id="card-name" placeholder="John Doe" style="font-size:1.2rem; padding: 10px;">
+                        <input type="text" id="card-name" placeholder="John Doe" style="font-size:1.2rem; padding: 10px; width: 100%; box-sizing: border-box;">
                         <input type="hidden" id="card-email-hidden" value="${escapeHtml(email)}">
                     `;
                     setTimeout(() => document.getElementById('card-name').focus(), 100);
@@ -514,4 +548,3 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
-
