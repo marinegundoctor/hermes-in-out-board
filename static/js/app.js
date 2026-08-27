@@ -342,8 +342,8 @@ function handleCardScanned(data) {
             // Clock IN
             content.innerHTML = `
                 <div style="text-align: center;">
-                    <h2 style="font-size: 2rem; color: var(--status-in);"><i class="fa-solid fa-check-circle"></i> Welcome Back, ${escapeHtml(data.user.name)}!</h2>
-                    <p style="font-size: 1.2rem;">Setting status to <b>IN</b>...</p>
+                    <h2 style="font-size: 3.5rem; color: var(--status-in);"><i class="fa-solid fa-check-circle"></i> Welcome Back, ${escapeHtml(data.user.name)}!</h2>
+                    <p style="font-size: 2rem; margin-top: 20px;">Setting status to <b>IN</b>...</p>
                 </div>
             `;
             setTimeout(() => {
@@ -353,8 +353,8 @@ function handleCardScanned(data) {
             // Currently IN, prompt for OUT
             cardState = 'QUICK_PICK';
             content.innerHTML = `
-                <h2>Check OUT: ${escapeHtml(data.user.name)}</h2>
-                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 1.2rem; color: #ccc;">
+                <h2 style="font-size: 3.5rem; margin-bottom: 25px;">Check OUT: ${escapeHtml(data.user.name)}</h2>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 2.4rem; color: #ccc; gap: 16px;">
                     <div><b style="color:var(--accent-yellow);">1</b> - LUNCH</div>
                     <div><b style="color:var(--accent-yellow);">2</b> - SUPPLY</div>
                     <div><b style="color:var(--accent-yellow);">3</b> - JFHQ</div>
@@ -364,17 +364,17 @@ function handleCardScanned(data) {
                     <div><b style="color:var(--accent-yellow);">7</b> - Free Text</div>
                     <div><b style="color:var(--accent-yellow);">0</b> - End of Day (Blank OUT)</div>
                 </div>
-                <p style="margin-top:15px; color:#888; font-size:1.1rem;">Press option number, or <b>Enter</b> to end of day.</p>
-                <p style="color:#888; font-size:1.1rem;">Press <b>ESC</b> to cancel.</p>
+                <p style="margin-top:30px; color:#888; font-size:1.8rem;">Press option number, or <b>Enter</b> to end of day.</p>
+                <p style="color:#888; font-size:1.8rem; margin-top: 10px;">Press <b>ESC</b> to cancel.</p>
             `;
         }
     } else {
         // Unknown card, prompt for email
         cardState = 'REGISTER_EMAIL';
         content.innerHTML = `
-            <h2>New Card Detected</h2>
-            <p style="margin-bottom: 10px;">Please enter your <b>Work Email</b> to link your account, and press <b>Enter</b>:</p>
-            <input type="email" id="card-email" placeholder="john.doe@example.com" style="font-size:1.2rem; padding: 10px; width: 100%;">
+            <h2 style="font-size: 3.5rem; margin-bottom: 20px;">New Card Detected</h2>
+            <p style="margin-bottom: 20px; font-size: 1.8rem;">Please enter your <b>Work Email</b> to link your account, and press <b>Enter</b>:</p>
+            <input type="email" id="card-email" placeholder="john.doe@example.com" style="font-size:2rem; padding: 15px; width: 100%;">
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="cancelCard()">Cancel</button>
             </div>
@@ -455,24 +455,24 @@ document.addEventListener('keydown', (e) => {
                 cardState = 'CUSTOM_LOC';
                 const content = document.getElementById('smartcard-content');
                 content.innerHTML = `
-                    <h2 style="font-size: 2rem; margin-bottom: 10px;">Custom Location</h2>
+                    <h2 style="font-size: 3.5rem; margin-bottom: 10px;">Custom Location</h2>
                     <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
-                        <input type="text" id="custom-loc" placeholder="Enter Location... (Required)" style="font-size:1.4rem; padding: 10px; width:100%; box-sizing: border-box;" required>
-                        <input type="text" id="custom-comment" placeholder="Enter Comment... (Optional)" style="font-size:1.4rem; padding: 10px; width:100%; box-sizing: border-box;">
+                        <input type="text" id="custom-loc" placeholder="Enter Location... (Required)" style="font-size:2rem; padding: 15px; width:100%; box-sizing: border-box;" required>
+                        <input type="text" id="custom-comment" placeholder="Enter Comment... (Optional)" style="font-size:2rem; padding: 15px; width:100%; box-sizing: border-box;">
                     </div>
-                    <p style="color: #ccc; font-size: 1.2rem;">Press <b>Tab</b> to switch fields, <b>Enter</b> to submit.</p>
+                    <p style="color: #ccc; font-size: 1.8rem; margin-top: 20px;">Press <b>Tab</b> to switch fields, <b>Enter</b> to submit.</p>
                 `;
                 setTimeout(() => document.getElementById('custom-loc').focus(), 100);
             } else if (currentQuickPick.needsComment) {
                 cardState = 'COMMENT';
                 const content = document.getElementById('smartcard-content');
                 content.innerHTML = `
-                    <h2 style="font-size: 2rem;">Add Comment for ${currentQuickPick.loc}?</h2>
-                    <p style="color: #ccc; margin-bottom:15px; font-size: 1.4rem;">Press <b>Y</b> to type a comment, or <b>Enter</b> to skip.</p>
+                    <h2 style="font-size: 3.5rem;">Add Comment for ${currentQuickPick.loc}?</h2>
+                    <p style="color: #ccc; margin-bottom:15px; font-size: 1.8rem;">Press <b>Y</b> to type a comment, or <b>Enter</b> to skip.</p>
                     <div id="comment-box" class="hidden">
-                        <input type="text" id="card-comment" maxlength="140" placeholder="Type comment..." style="font-size:1.4rem; padding: 10px; width: 100%; box-sizing: border-box;">
+                        <input type="text" id="card-comment" maxlength="140" placeholder="Type comment..." style="font-size:2rem; padding: 15px; width: 100%; box-sizing: border-box;">
                     </div>
-                    <p style="margin-top:15px; color:#888; font-size:1.1rem;" id="timeout-msg">Auto-submitting in 10 seconds...</p>
+                    <p style="margin-top:25px; color:#888; font-size:1.8rem;" id="timeout-msg">Auto-submitting in 10 seconds...</p>
                 `;
                 
                 let timeLeft = 10;
@@ -541,10 +541,10 @@ document.addEventListener('keydown', (e) => {
                     content.innerHTML = `
                         <h2 style="margin-bottom: 10px;">Email Not Found</h2>
                         <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                            <input type="text" id="card-rank" placeholder="Rank (Optional)" style="font-size:1.4rem; padding: 10px; width:40%; box-sizing: border-box;">
-                            <input type="text" id="card-name" placeholder="Full Name (Req)" style="font-size:1.4rem; padding: 10px; width:60%; box-sizing: border-box;" required>
+                            <input type="text" id="card-rank" placeholder="Rank (Optional)" style="font-size:2rem; padding: 15px; width:40%; box-sizing: border-box;">
+                            <input type="text" id="card-name" placeholder="Full Name (Req)" style="font-size:2rem; padding: 15px; width:60%; box-sizing: border-box;" required>
                         </div>
-                        <p style="color: #ccc; font-size: 1.2rem;">Press <b>Tab</b> to switch, <b>Enter</b> to continue.</p>
+                        <p style="color: #ccc; font-size: 1.8rem; margin-top: 20px;">Press <b>Tab</b> to switch, <b>Enter</b> to continue.</p>
                     `;
                     setTimeout(() => document.getElementById('card-rank').focus(), 100);
                 }
@@ -568,15 +568,15 @@ document.addEventListener('keydown', (e) => {
             
             cardState = 'REGISTER_GROUP';
             
-            let groupHtml = `<h2 style="font-size: 2rem;">Select Group</h2>
-                             <div style="display: flex; flex-direction: column; gap: 8px; font-size: 1.2rem; color: #ccc;">`;
+            let groupHtml = `<h2 style="font-size: 3.5rem;">Select Group</h2>
+                             <div style="display: flex; flex-direction: column; gap: 8px; font-size: 2.4rem; color: #ccc; gap: 16px;">`;
             
             availableGroups.forEach((g, idx) => {
                 groupHtml += `<div><b style="color:var(--accent-yellow);">${idx + 1}</b> - ${escapeHtml(g)}</div>`;
             });
             groupHtml += `<div><b style="color:var(--accent-yellow);">0</b> - Create New Group</div>
                           </div>
-                          <p style="margin-top:15px; color:#888; font-size:1.1rem;">Press option number.</p>`;
+                          <p style="margin-top:30px; color:#888; font-size:1.8rem;">Press option number.</p>`;
             
             document.getElementById('smartcard-content').innerHTML = groupHtml;
         }
@@ -585,8 +585,8 @@ document.addEventListener('keydown', (e) => {
             cardState = 'REGISTER_GROUP_NEW';
             document.getElementById('smartcard-content').innerHTML = `
                 <h2 style="margin-bottom: 10px;">Create New Group</h2>
-                <input type="text" id="card-group-new" placeholder="New Group Name" style="font-size:1.4rem; padding: 10px; width:100%; box-sizing: border-box;" required>
-                <p style="color: #ccc; font-size: 1.2rem; margin-top: 15px;">Press <b>Enter</b> to submit & Clock IN.</p>
+                <input type="text" id="card-group-new" placeholder="New Group Name" style="font-size:2rem; padding: 15px; width:100%; box-sizing: border-box;" required>
+                <p style="color: #ccc; font-size: 1.8rem; margin-top: 25px;">Press <b>Enter</b> to submit & Clock IN.</p>
             `;
             setTimeout(() => document.getElementById('card-group-new').focus(), 100);
         } else {
