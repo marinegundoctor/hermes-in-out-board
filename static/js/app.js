@@ -5,11 +5,6 @@ function escapeHtml(unsafe) {
 }
 document.addEventListener('DOMContentLoaded', () => {
     const boardsContainer = document.getElementById('boards-container');
-    const simBtn = document.getElementById('dev-sim-btn');
-    const simModal = document.getElementById('sim-modal');
-    const simCancel = document.getElementById('sim-cancel');
-    const simSubmit = document.getElementById('sim-submit');
-    const simUidInput = document.getElementById('sim-uid');
 
     const kioskModal = document.getElementById('kiosk-modal');
     const kioskGreeting = document.getElementById('kiosk-greeting');
