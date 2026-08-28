@@ -82,17 +82,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('banner-org-name').innerText = settings.org_name || '';
             }
             
-            document.getElementById('backend-status-dot').style.background = 'var(--status-in)';
+            document.getElementById('backend-status-dot').style.backgroundColor = 'var(--status-in)';
             document.getElementById('backend-status-dot').style.boxShadow = '0 0 8px var(--status-in)';
             document.getElementById('backend-status-text').innerText = 'Backend';
             document.getElementById('backend-status-text').style.color = 'var(--text-muted)';
             
         } catch (err) {
             console.error("Failed to load data:", err);
-            document.getElementById('backend-status-dot').style.background = 'var(--status-out)';
+            document.getElementById('backend-status-dot').style.backgroundColor = 'var(--status-out)';
             document.getElementById('backend-status-dot').style.boxShadow = '0 0 8px var(--status-out)';
             document.getElementById('backend-status-text').innerText = 'Backend';
-            document.getElementById('backend-status-text').style.color = 'var(--status-out)';
+            document.getElementById('backend-status-text').style.color = 'var(--text-muted)';
         }
     }
 
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const netDot = document.getElementById('internet-status-dot');
         const netText = document.getElementById('internet-status-text');
         if (netDot && netText) {
-            netDot.style.background = 'var(--status-in)';
+            netDot.style.backgroundColor = 'var(--status-in)';
             netDot.style.boxShadow = '0 0 8px var(--status-in)';
             netText.style.color = 'var(--text-muted)';
         }
@@ -268,9 +268,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const netDot = document.getElementById('internet-status-dot');
         const netText = document.getElementById('internet-status-text');
         if (netDot && netText) {
-            netDot.style.background = 'var(--status-out)';
+            netDot.style.backgroundColor = 'var(--status-out)';
             netDot.style.boxShadow = '0 0 8px var(--status-out)';
-            netText.style.color = 'var(--status-out)';
+            netText.style.color = 'var(--text-muted)';
         }
     });
 
