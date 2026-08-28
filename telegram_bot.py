@@ -217,6 +217,25 @@ def process_message(chat_id, text):
         del waiting_for_comment[chat_id]
         return
 
+
+    # Handle Literal Help Command
+    if text_clean.lower() in ["help", "/help"]:
+        help_msg = (
+            "🤖 **Hermes Bot Help**\n\n"
+            "**Updating your status:**\n"
+            "Just message me naturally! Examples:\n"
+            "- \"Heading to lunch\"\n"
+            "- \"I'm at the dentist, back at 1400\"\n"
+            "- \"Back in the office\"\n\n"
+            "**Changing your Profile (Rank, Name, Group, Email):**\n"
+            "If you get promoted, married, or switch groups, just type `/start` at any time to re-enter your information.\n\n"
+            "**Other Commands:**\n"
+            "- \"Move me to the S6 group\"\n"
+            "- \"Update the announcement: Title... Body...\""
+        )
+        send_message(chat_id, help_msg)
+        return
+
     # AI Parsing
     # Removed to save network roundtrip
     
@@ -224,6 +243,23 @@ def process_message(chat_id, text):
         parsed_data = parse_status_message(text)
         action = parsed_data.get("action", "update_status")
         
+        if action == "help":
+            help_msg = (
+                "🤖 **Hermes Bot Help**\n\n"
+                "**Updating your status:**\n"
+                "Just message me naturally! Examples:\n"
+                "- \"Heading to lunch\"\n"
+                "- \"I'm at the dentist, back at 1400\"\n"
+                "- \"Back in the office\"\n\n"
+                "**Changing your Profile (Rank, Name, Group, Email):**\n"
+                "If you get promoted, married, or switch groups, just type `/start` at any time to re-enter your information.\n\n"
+                "**Other Commands:**\n"
+                "- \"Move me to the S6 group\"\n"
+                "- \"Update the announcement: Title... Body...\""
+            )
+            send_message(chat_id, help_msg)
+            return
+
         if action == "change_group":
             target_group = parsed_data.get("target_group", "")
             if not target_group:
