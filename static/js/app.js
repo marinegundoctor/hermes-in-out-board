@@ -166,22 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    simBtn.addEventListener('click', () => {
-        simModal.classList.remove('hidden');
-        simUidInput.focus();
-    });
-
-    const closeSimModal = () => {
-        simModal.classList.add('hidden');
-        simUidInput.value = '';
-    };
-    simCancel.addEventListener('click', closeSimModal);
-    simSubmit.addEventListener('click', () => {
-        const uid = simUidInput.value.trim();
-        if (!uid) return;
-        closeSimModal();
-        handleBadgeTap(uid);
-    });
 
     async function handleBadgeTap(uid) {
         const user = allUsers.find(u => String(u.uid) === String(uid));
