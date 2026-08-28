@@ -280,6 +280,7 @@ let cardState = 'IDLE'; // IDLE, REGISTER_EMAIL, REGISTER_NAME, QUICK_PICK, COMM
 let activeCardId = null;
 let currentQuickPick = null;
 let commentTimeout = null;
+let quickPickTimeout = null;
 let newUserName = '';
 let newUserRank = '';
 let newUserEmail = '';
@@ -297,12 +298,32 @@ const QUICK_PICK_MAP = {
 };
 
 function pollSmartCard() {
-    if (cardState !== 'IDLE') return; // Don't poll if we are already interacting
     fetch('/api/scans/pending')
         .then(res => res.json())
         .then(data => {
             if (data && data.card_id) {
-                handleCardScanned(data);
+                if (cardState !== 'IDLE' && activeCardId && activeCardId !== data.card_id) {
+                    // Interrupt current flow with new badge
+                    const oldCardId = activeCardId;
+                    if (['QUICK_PICK', 'COMMENT', 'CUSTOM_LOC'].includes(cardState)) {
+                        fetch('/api/scans/action', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({card_id: oldCardId, action: 'OUT', location: '--', comment: '--'})
+                        }).then(() => loadData());
+                    } else if (cardState.startsWith('REGISTER_')) {
+                        fetch('/api/scans/cancel', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({card_id: oldCardId})
+                        });
+                    }
+                    clearInterval(commentTimeout);
+                    clearInterval(quickPickTimeout);
+                    handleCardScanned(data);
+                } else if (cardState === 'IDLE') {
+                    handleCardScanned(data);
+                }
             }
         }).catch(err => console.error("Card poll error", err));
 }
@@ -343,9 +364,23 @@ function handleCardScanned(data) {
                     <div><b style="color:var(--accent-yellow);">7</b> - Free Text</div>
                     <div><b style="color:var(--accent-yellow);">0</b> - End of Day (Blank OUT)</div>
                 </div>
-                <p style="margin-top:30px; color:#888; font-size:1.8rem;">Press option number, or <b>Enter</b> to end of day.</p>
+                <p style="margin-top:30px; color:#888; font-size:1.8rem;" id="quick-timeout-msg">Auto-submitting in 7 seconds...</p>
+                <p style="color:#888; font-size:1.8rem; margin-top: 10px;">Press option number, <b>Enter</b>, or wait.</p>
                 <p style="color:#888; font-size:1.8rem; margin-top: 10px;">Press <b>ESC</b> to cancel.</p>
             `;
+            let timeLeft = 7;
+            if (quickPickTimeout) clearInterval(quickPickTimeout);
+            quickPickTimeout = setInterval(() => {
+                timeLeft--;
+                const msg = document.getElementById('quick-timeout-msg');
+                if (msg) msg.innerText = `Auto-submitting in ${timeLeft} seconds...`;
+                if (timeLeft <= 0) {
+                    clearInterval(quickPickTimeout);
+                    if (cardState === 'QUICK_PICK') {
+                        submitCardAction('OUT', '--', '--');
+                    }
+                }
+            }, 1000);
         }
     } else {
         // Unknown card, prompt for email
@@ -392,21 +427,25 @@ function closeCardModal() {
     document.getElementById('smartcard-modal').classList.add('hidden');
     cardState = 'IDLE';
     activeCardId = null;
-    clearTimeout(commentTimeout);
+    clearInterval(commentTimeout);
+    clearInterval(quickPickTimeout);
 }
 
 function submitCardAction(action, loc, comment) {
+    const submittingCardId = activeCardId;
     fetch('/api/scans/action', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-            card_id: activeCardId,
+            card_id: submittingCardId,
             action: action,
             location: loc,
             comment: comment
         })
     }).then(() => {
-        closeCardModal();
+        if (activeCardId === submittingCardId || activeCardId === null) {
+            closeCardModal();
+        }
         loadData();
     });
 }
