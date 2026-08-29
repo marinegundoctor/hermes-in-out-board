@@ -218,6 +218,11 @@ def process_message(chat_id, text):
         return
 
 
+
+    # Handle literal simple acknowledgments to save API calls
+    if text_clean.lower() in ["thanks", "thank you", "ok", "okay", "got it", "cool", "roger", "copy", "👍"]:
+        return
+
     # Handle Literal Help Command
     if text_clean.lower() in ["help", "/help"]:
         help_msg = (
@@ -330,6 +335,9 @@ def process_message(chat_id, text):
 
         if action == "ignore":
             send_message(chat_id, "❌ I can only process In/Out Board status updates and administrative commands. Please try again with a valid request.")
+            return
+            
+        if action == "acknowledge":
             return
 
         # Regular status update
