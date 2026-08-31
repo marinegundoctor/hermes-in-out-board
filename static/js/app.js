@@ -281,6 +281,31 @@ let activeCardId = null;
 let currentQuickPick = null;
 let commentTimeout = null;
 let quickPickTimeout = null;
+let registerTimeout = null;
+let registerTimeLeft = 15;
+
+function resetRegisterTimeout() {
+    if (registerTimeout) clearInterval(registerTimeout);
+    registerTimeLeft = 15;
+    
+    const updateMsg = () => {
+        const msg = document.getElementById('new-user-timeout-msg');
+        if (msg) msg.innerText = `Auto-closing in ${registerTimeLeft} seconds...`;
+    };
+    
+    updateMsg();
+    registerTimeout = setInterval(() => {
+        registerTimeLeft--;
+        updateMsg();
+        if (registerTimeLeft <= 0) {
+            clearInterval(registerTimeout);
+            if (cardState.startsWith('REGISTER_')) {
+                cancelCard();
+            }
+        }
+    }, 1000);
+}
+
 let newUserName = '';
 let newUserRank = '';
 let newUserEmail = '';
@@ -389,11 +414,13 @@ function handleCardScanned(data) {
             <h2 style="font-size: 3.5rem; margin-bottom: 20px;">New Card Detected</h2>
             <p style="margin-bottom: 20px; font-size: 1.8rem;">Please enter your <b>Work Email</b> to link your account, and press <b>Enter</b>:</p>
             <input type="email" id="card-email" placeholder="john.doe@example.com" style="font-size:2rem; padding: 15px; width: 100%;">
+            <p style="margin-top:20px; color:#888; font-size:1.5rem;" id="new-user-timeout-msg">Auto-closing in 15 seconds...</p>
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="cancelCard()">Cancel</button>
             </div>
         `;
         setTimeout(() => document.getElementById('card-email').focus(), 100);
+        resetRegisterTimeout();
     }
 }
 
@@ -429,6 +456,7 @@ function closeCardModal() {
     activeCardId = null;
     clearInterval(commentTimeout);
     clearInterval(quickPickTimeout);
+    clearInterval(registerTimeout);
 }
 
 function submitCardAction(action, loc, comment) {
@@ -452,6 +480,10 @@ function submitCardAction(action, loc, comment) {
 
 document.addEventListener('keydown', (e) => {
     if (cardState === 'IDLE') return;
+    
+    if (cardState.startsWith('REGISTER_')) {
+        resetRegisterTimeout();
+    }
     
     if (e.key === 'Escape') {
         cancelCard();
@@ -563,8 +595,10 @@ document.addEventListener('keydown', (e) => {
                             <input type="text" id="card-name" placeholder="Full Name (Req)" style="font-size:2rem; padding: 15px; width:60%; box-sizing: border-box;" required>
                         </div>
                         <p style="color: #ccc; font-size: 1.8rem; margin-top: 20px;">Press <b>Tab</b> to switch, <b>Enter</b> to continue.</p>
+                        <p style="margin-top:20px; color:#888; font-size:1.5rem;" id="new-user-timeout-msg">Auto-closing in 15 seconds...</p>
                     `;
                     setTimeout(() => document.getElementById('card-rank').focus(), 100);
+                    resetRegisterTimeout();
                 }
             });
         }
@@ -594,9 +628,11 @@ document.addEventListener('keydown', (e) => {
             });
             groupHtml += `<div><b style="color:var(--accent-yellow);">0</b> - Create New Group</div>
                           </div>
-                          <p style="margin-top:30px; color:#888; font-size:1.8rem;">Press option number.</p>`;
+                          <p style="margin-top:30px; color:#888; font-size:1.8rem;">Press option number.</p>
+                          <p style="margin-top:20px; color:#888; font-size:1.5rem;" id="new-user-timeout-msg">Auto-closing in 15 seconds...</p>`;
             
             document.getElementById('smartcard-content').innerHTML = groupHtml;
+            resetRegisterTimeout();
         }
     } else if (cardState === 'REGISTER_GROUP') {
         if (e.key === '0') {
@@ -605,8 +641,10 @@ document.addEventListener('keydown', (e) => {
                 <h2 style="margin-bottom: 10px;">Create New Group</h2>
                 <input type="text" id="card-group-new" placeholder="New Group Name" style="font-size:2rem; padding: 15px; width:100%; box-sizing: border-box;" required>
                 <p style="color: #ccc; font-size: 1.8rem; margin-top: 25px;">Press <b>Enter</b> to submit & Clock IN.</p>
+                <p style="margin-top:20px; color:#888; font-size:1.5rem;" id="new-user-timeout-msg">Auto-closing in 15 seconds...</p>
             `;
             setTimeout(() => document.getElementById('card-group-new').focus(), 100);
+            resetRegisterTimeout();
         } else {
             const idx = parseInt(e.key);
             if (!isNaN(idx) && idx >= 1 && idx <= availableGroups.length) {
