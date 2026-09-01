@@ -276,6 +276,3 @@ body.kiosk-mode .clickable-row {
 body.kiosk-mode .clickable-row:hover, body.kiosk-mode .clickable-row:active {
     background: rgba(255, 255, 255, 0.1);
 }
-body.kiosk-mode .clickable-row td {
-    pointer-events: none; /* Let the tr catch the click */
-}
