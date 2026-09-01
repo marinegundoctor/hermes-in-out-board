@@ -256,7 +256,41 @@ document.addEventListener('DOMContentLoaded', () => {
         if (kioskTimer) clearInterval(kioskTimer);
         kioskModal.classList.add('hidden');
         pendingUid = null;
+        if (window.kioskKeyboard) {
+            window.kioskKeyboard.clearInput();
+        }
         kioskProgressBar.style.background = 'var(--accent-yellow)';
+    }
+
+    // Initialize Virtual Keyboard if library is loaded
+    if (window.SimpleKeyboard) {
+        const Keyboard = window.SimpleKeyboard.default;
+        window.kioskKeyboard = new Keyboard({
+            onChange: input => {
+                kioskCustomInput.value = input;
+                // reset timer if they are typing
+                startKioskTimer(15000, false);
+            },
+            onKeyPress: button => {
+                if (button === "{enter}") {
+                    kioskSkipBtn.click();
+                }
+            },
+            layout: {
+                'default': [
+                    'q w e r t y u i o p',
+                    'a s d f g h j k l',
+                    '{shift} z x c v b n m {bksp}',
+                    '{space} {enter}'
+                ],
+                'shift': [
+                    'Q W E R T Y U I O P',
+                    'A S D F G H J K L',
+                    '{shift} Z X C V B N M {bksp}',
+                    '{space} {enter}'
+                ]
+            }
+        });
     }
 
     loadData();

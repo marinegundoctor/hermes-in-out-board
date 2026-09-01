@@ -1,0 +1,39 @@
+#!/bin/bash
+xset -dpms
+xset s off
+xset s noblank
+
+# The Hosyond panel requires rotating 'right' to be upright landscape.
+# Wait, let's see. If 'left' made the top of the board on the left side,
+# that means 'left' rotated it 90 degrees CCW.
+# If we want it upright, we need it rotated 90 degrees CW from its native.
+# So 'right' is correct!
+xrandr --output HDMI-1 --rotate right
+
+# Start window manager in background
+openbox-session &
+unclutter -idle 0.5 -root &
+
+URL="http://localhost:8000/"
+OPTS="--kiosk --noerrdialogs --disable-infobars --disable-features=TranslateUI"
+
+HDMI1_WIDTH=$(xrandr | grep -w "connected primary" | grep -oE "[0-9]+x[0-9]+\+[0-9]+\+[0-9]+" | awk -F 'x' '{print $1}')
+if [ -z "$HDMI1_WIDTH" ]; then
+    HDMI1_WIDTH=1920
+fi
+
+# Run our dual-browser launcher inside a loop to keep it alive
+while true; do
+    # Display 1
+    /usr/bin/chromium $OPTS --window-position=0,0 --user-data-dir=/home/kiosk/.config/chromium-display1 "$URL" &
+    PID1=$!
+    
+    sleep 2
+    
+    # Display 2
+    /usr/bin/chromium $OPTS --window-position=$HDMI1_WIDTH,0 --user-data-dir=/home/kiosk/.config/chromium-display2 "$URL" &
+    PID2=$!
+    
+    wait $PID1 $PID2
+    sleep 2
+done

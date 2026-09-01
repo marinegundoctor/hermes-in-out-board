@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="/static/css/styles.css?v=3">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Virtual Keyboard for Kiosk -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/css/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/index.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -98,7 +102,8 @@
                     <button class="btn-quick" data-val="TDY">✈️ TDY</button>
                 </div>
                 <p style="margin: 10px 0; color: var(--text-muted);">Or type custom:</p>
-                <input type="text" id="kiosk-custom-comment" placeholder="Tap here for keyboard..." autocomplete="off">
+                <input type="text" id="kiosk-custom-comment" placeholder="Tap here for keyboard..." autocomplete="off" style="margin-bottom: 10px;">
+                <div class="simple-keyboard" style="color: #000;"></div>
             </div>
 
             <div class="kiosk-footer" style="margin-top: 15px; display: flex; gap: 10px;">
