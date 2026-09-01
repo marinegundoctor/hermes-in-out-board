@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const rankDisplay = user.rank ? escapeHtml(user.rank) + ' ' : '';
 
                 const rDisplay = user.rank ? escapeHtml(user.rank) : '';
-                const rowAttr = isKiosk ? `class="clickable-row" onclick="window.handleBadgeTap('${user.uid}')"` : "";
+                const rowAttr = isKiosk ? `class="clickable-row" onclick="window.handleBadgeTap('${user.uid}')" onpointerdown="window.handleBadgeTap('${user.uid}')"` : "";
                 tbodyHtml += `
                     <tr ${rowAttr}>
                         <td style="color: var(--text-muted); font-weight: 500;">${rDisplay}</td>
