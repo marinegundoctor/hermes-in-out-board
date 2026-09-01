@@ -264,3 +264,18 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* Kiosk Mode Styles */
+body.kiosk-mode .clocks-grid {
+    display: none !important;
+}
+body.kiosk-mode .clickable-row {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+body.kiosk-mode .clickable-row:hover, body.kiosk-mode .clickable-row:active {
+    background: rgba(255, 255, 255, 0.1);
+}
+body.kiosk-mode .clickable-row td {
+    pointer-events: none; /* Let the tr catch the click */
+}

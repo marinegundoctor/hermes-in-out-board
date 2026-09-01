@@ -4,6 +4,8 @@ function escapeHtml(unsafe) {
     return String(unsafe).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 document.addEventListener('DOMContentLoaded', () => {
+    const isKiosk = new URLSearchParams(window.location.search).get("view") === "kiosk";
+    if (isKiosk) document.body.classList.add("kiosk-mode");
     const boardsContainer = document.getElementById('boards-container');
 
     const kioskModal = document.getElementById('kiosk-modal');
@@ -11,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const kioskActionText = document.getElementById('kiosk-action-text');
     const kioskOutOptions = document.getElementById('kiosk-out-options');
     const kioskSkipBtn = document.getElementById('kiosk-skip');
+    const kioskCancelBtn = document.getElementById('kiosk-cancel');
     const kioskCustomInput = document.getElementById('kiosk-custom-comment');
     const kioskProgressBar = document.getElementById('kiosk-progress');
     const quickBtns = document.querySelectorAll('.btn-quick');
@@ -119,8 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const rankDisplay = user.rank ? escapeHtml(user.rank) + ' ' : '';
 
                 const rDisplay = user.rank ? escapeHtml(user.rank) : '';
+                const rowAttr = isKiosk ? `class="clickable-row" onclick="window.handleBadgeTap('${user.uid}')"` : "";
                 tbodyHtml += `
-                    <tr>
+                    <tr ${rowAttr}>
                         <td style="color: var(--text-muted); font-weight: 500;">${rDisplay}</td>
                         <td><strong>${escapeHtml(user.name)}</strong></td>
                         <td><span class="status-badge ${user.status}">${statusIcon}</span></td>
@@ -167,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+    window.handleBadgeTap = handleBadgeTap;
     async function handleBadgeTap(uid) {
         const user = allUsers.find(u => String(u.uid) === String(uid));
         if (!user) {
@@ -224,6 +229,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     kioskSkipBtn.addEventListener('click', () => {
         submitKioskData(kioskCustomInput.value.trim() ? "Unknown" : "--", kioskCustomInput.value.trim());
+    });
+
+    kioskCancelBtn.addEventListener('click', () => {
+        resetKiosk();
     });
 
     async function submitKioskData(locationVal = "--", commentVal = "") {
