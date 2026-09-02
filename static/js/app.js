@@ -173,24 +173,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.handleBadgeTap = handleBadgeTap;
     async function handleBadgeTap(uid) {
+        // If someone else is already tapped and waiting, submit them immediately before proceeding
+        if (pendingUid && pendingUid !== uid && !kioskModal.classList.contains('hidden')) {
+            submitKioskData(); // Submit the previous person OUT
+        }
+
         const user = allUsers.find(u => String(u.uid) === String(uid));
         if (!user) {
             alert("User with badge not found!");
             return;
         }
 
-        pendingUid = uid;
-        kioskModal.classList.remove('hidden');
-        kioskGreeting.innerText = `Hello, ${user.name}!`;
-        kioskCustomInput.value = '';
-
         if (user.status === 'out') {
-            kioskActionText.innerText = "Checking IN... Welcome back!";
-            kioskActionText.style.color = 'var(--status-in)';
-            kioskOutOptions.classList.add('hidden');
-            kioskSkipBtn.classList.add('hidden');
-            startKioskTimer(6000, true);
+            // Checking IN: No modal needed, just submit immediately
+            pendingUid = uid;
+            submitKioskData("--", "In");
+            return;
         } else {
+            // Checking OUT: Show modal
+            pendingUid = uid;
+            kioskModal.classList.remove('hidden');
+            kioskGreeting.innerText = `Hello, ${user.name}!`;
+            kioskCustomInput.value = '';
+            
             kioskActionText.innerText = "Checking OUT.";
             kioskActionText.style.color = 'var(--status-out)';
             kioskOutOptions.classList.remove('hidden');
@@ -370,6 +375,11 @@ function pollSmartCard() {
         .then(res => res.json())
         .then(data => {
             if (data && data.card_id) {
+                // If a manual touch tap was pending, auto-submit it before opening card reader modal
+                if (!document.getElementById('kiosk-modal').classList.contains('hidden') && pendingUid) {
+                    submitKioskData();
+                }
+
                 if (cardState !== 'IDLE' && activeCardId && activeCardId !== data.card_id) {
                     // Interrupt current flow with new badge
                     const oldCardId = activeCardId;

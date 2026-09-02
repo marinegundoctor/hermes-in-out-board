@@ -280,7 +280,7 @@ body.kiosk-mode .clickable-row:hover, body.kiosk-mode .clickable-row:active {
 body.kiosk-mode .modal-content {
     margin: 2% auto;
     width: 95%;
-    max-width: 900px;
+    max-width: none;
     padding: 30px;
 }
 body.kiosk-mode #kiosk-greeting {
