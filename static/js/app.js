@@ -12,11 +12,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const kioskGreeting = document.getElementById('kiosk-greeting');
     const kioskActionText = document.getElementById('kiosk-action-text');
     const kioskOutOptions = document.getElementById('kiosk-out-options');
+    const kioskViewMain = document.getElementById('kiosk-view-main');
+    const kioskViewTime = document.getElementById('kiosk-view-time');
+    const kioskViewCustom = document.getElementById('kiosk-view-custom');
+    
     const kioskSkipBtn = document.getElementById('kiosk-skip');
     const kioskCancelBtn = document.getElementById('kiosk-cancel');
     const kioskCustomInput = document.getElementById('kiosk-custom-comment');
     const kioskProgressBar = document.getElementById('kiosk-progress');
-    const quickBtns = document.querySelectorAll('.btn-quick');
+    const btnCustomOut = document.getElementById('btn-custom-out');
+    
+    let selectedQuickLocation = "";
 
     let allUsers = [];
     let kioskTimer = null;
@@ -207,7 +213,13 @@ document.addEventListener('DOMContentLoaded', () => {
             kioskActionText.innerText = "Checking OUT.";
             kioskActionText.style.color = 'var(--status-out)';
             kioskOutOptions.classList.remove('hidden');
-            kioskSkipBtn.classList.remove('hidden');
+            kioskViewMain.classList.remove('hidden');
+            kioskViewTime.classList.add('hidden');
+            kioskViewCustom.classList.add('hidden');
+            
+            kioskSkipBtn.classList.add('hidden');
+            kioskCancelBtn.innerText = "Cancel";
+            kioskCancelBtn.style.width = "100%";
             startKioskTimer(20000, true);
         }
     }
@@ -244,18 +256,80 @@ document.addEventListener('DOMContentLoaded', () => {
         kioskProgressBar.style.background = '#0284c7';
     });
 
-    quickBtns.forEach(btn => {
+    document.querySelectorAll('.quick-card-main').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            submitKioskData(e.target.getAttribute('data-val'), ""); 
+            const loc = e.target.parentElement.getAttribute('data-val');
+            submitKioskData(loc, "--");
         });
     });
 
+    function showSubView(viewEl, titleId, titleText) {
+        kioskViewMain.classList.add('hidden');
+        viewEl.classList.remove('hidden');
+        document.getElementById(titleId).innerText = titleText;
+        
+        kioskSkipBtn.classList.remove('hidden');
+        kioskSkipBtn.innerText = "Confirm & Submit";
+        kioskCancelBtn.innerText = "Back";
+        kioskCancelBtn.style.width = "30%";
+        
+        startKioskTimer(15000, false);
+    }
+
+    document.querySelectorAll('.btn-time').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            selectedQuickLocation = e.currentTarget.getAttribute('data-val');
+            showSubView(kioskViewTime, 'kiosk-time-title', `Return Time for ${selectedQuickLocation}`);
+        });
+    });
+
+    document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            selectedQuickLocation = e.currentTarget.getAttribute('data-val');
+            showSubView(kioskViewCustom, 'kiosk-custom-title', `Custom Comment for ${selectedQuickLocation}`);
+            kioskCustomInput.value = '';
+            
+            if (window.kioskKeyboard) {
+                window.kioskKeyboard.setInput('');
+                document.querySelector('.simple-keyboard').style.display = 'block';
+            }
+        });
+    });
+
+    btnCustomOut.addEventListener('click', () => {
+        selectedQuickLocation = "Unknown";
+        showSubView(kioskViewCustom, 'kiosk-custom-title', `Custom Location & Comment`);
+        kioskCustomInput.value = '';
+        
+        if (window.kioskKeyboard) {
+            window.kioskKeyboard.setInput('');
+            document.querySelector('.simple-keyboard').style.display = 'block';
+        }
+    });
+
     kioskSkipBtn.addEventListener('click', () => {
-        submitKioskData(kioskCustomInput.value.trim() ? "Unknown" : "--", kioskCustomInput.value.trim() || "--");
+        let loc = selectedQuickLocation || (kioskCustomInput.value.trim() ? "Unknown" : "--");
+        submitKioskData(loc, kioskCustomInput.value.trim() || "--");
     });
 
     kioskCancelBtn.addEventListener('click', () => {
-        resetKiosk();
+        if (!kioskViewMain.classList.contains('hidden')) {
+            resetKiosk();
+        } else {
+            kioskViewTime.classList.add('hidden');
+            kioskViewCustom.classList.add('hidden');
+            kioskViewMain.classList.remove('hidden');
+            
+            kioskSkipBtn.classList.add('hidden');
+            kioskCancelBtn.innerText = "Cancel";
+            kioskCancelBtn.style.width = "100%";
+            
+            selectedQuickLocation = "";
+            if (window.kioskKeyboard) {
+                document.querySelector('.simple-keyboard').style.display = 'none';
+            }
+            startKioskTimer(15000, false);
+        }
     });
 
     async function submitKioskData(locationVal = "--", commentVal = "--") {
@@ -305,8 +379,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (kioskTimer) clearInterval(kioskTimer);
         kioskModal.classList.add('hidden');
         pendingUid = null;
+        selectedQuickLocation = "";
         if (window.kioskKeyboard) {
             window.kioskKeyboard.clearInput();
+            document.querySelector('.simple-keyboard').style.display = 'none';
         }
         kioskProgressBar.style.background = 'var(--accent-yellow)';
     }
@@ -329,6 +405,53 @@ document.addEventListener('DOMContentLoaded', () => {
             cmt += `${rd} ${rt}`;
         }
         return cmt;
+    }
+
+    // Initialize Virtual Keyboard if library is loaded
+    if (window.SimpleKeyboard) {
+        const Keyboard = window.SimpleKeyboard.default;
+        window.kioskKeyboard = new Keyboard({
+            onChange: input => {
+                kioskCustomInput.value = input;
+                // reset timer if they are typing
+                startKioskTimer(15000, false);
+            },
+            onKeyPress: button => {
+                if (button === "{enter}") {
+                    kioskSkipBtn.click();
+                }
+            },
+            layout: {
+                'default': [
+                    'q w e r t y u i o p',
+                    'a s d f g h j k l',
+                    '{shift} z x c v b n m {bksp}',
+                    '{space} {enter}'
+                ],
+                'shift': [
+                    'Q W E R T Y U I O P',
+                    'A S D F G H J K L',
+                    '{shift} Z X C V B N M {bksp}',
+                    '{space} {enter}'
+                ]
+            }
+        });
+
+        // Toggle shift
+        window.kioskKeyboard.setOptions({
+            onKeyPress: button => {
+                if (button === "{shift}" || button === "{lock}") handleShift();
+                if (button === "{enter}") kioskSkipBtn.click();
+            }
+        });
+
+        function handleShift() {
+            let currentLayout = window.kioskKeyboard.options.layoutName;
+            let shiftToggle = currentLayout === "default" ? "shift" : "default";
+            window.kioskKeyboard.setOptions({
+                layoutName: shiftToggle
+            });
+        }
     }
 
     loadData();

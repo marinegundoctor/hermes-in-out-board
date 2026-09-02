@@ -291,10 +291,48 @@ body.kiosk-mode #kiosk-action-text {
     font-size: 1.8rem;
     margin-bottom: 20px;
 }
-body.kiosk-mode .btn-quick {
-    font-size: 1.3rem;
-    padding: 15px;
+body.kiosk-mode .quick-card {
+    background: #333;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
+body.kiosk-mode .quick-card-main {
+    font-size: 2.2rem;
+    padding: 30px;
+    text-align: center;
+    background: var(--accent-yellow);
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 1;
+}
+body.kiosk-mode .quick-card-actions {
+    display: flex;
+    height: 60px;
+}
+body.kiosk-mode .quick-card-actions > div {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    cursor: pointer;
+    background: #222;
+    color: #ccc;
+    border-top: 1px solid #444;
+}
+body.kiosk-mode .quick-card-actions > div:first-child {
+    border-right: 1px solid #444;
+}
+body.kiosk-mode .quick-card-actions > div:active {
+    background: #555;
+}
+body.kiosk-mode .quick-card-main:active {
+    background: #d4a017;
+}
+
 body.kiosk-mode #kiosk-custom-comment {
     font-size: 1.5rem;
     padding: 15px;

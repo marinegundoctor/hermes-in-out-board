@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Board - {{ settings.org_name }}</title>
-    <link rel="stylesheet" href="/static/css/styles.css?v=8">
+    <link rel="stylesheet" href="/static/css/styles.css?v=10">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Virtual Keyboard for Kiosk -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/css/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/index.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -90,24 +94,64 @@
             <p id="kiosk-action-text" style="font-size: 1.2rem; margin-bottom: 15px; color: var(--accent-yellow);">Checking status...</p>
             
             <div id="kiosk-out-options" class="hidden">
-                <p style="margin-bottom: 10px; color: var(--text-muted); font-size: 1.5rem;">Select Status:</p>
-                <div class="quick-btns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
-                    <button class="btn-quick" data-val="Lunch" style="font-size: 2rem; padding: 25px;">🍔 Lunch</button>
-                    <button class="btn-quick" data-val="Appointment" style="font-size: 2rem; padding: 25px;">📅 Appt</button>
-                    <button class="btn-quick" data-val="Meeting" style="font-size: 2rem; padding: 25px;">🤝 Meeting</button>
-                    <button class="btn-quick" data-val="TDY" style="font-size: 2rem; padding: 25px;">✈️ TDY</button>
+                <!-- Main View -->
+                <div id="kiosk-view-main">
+                    <p style="margin-bottom: 10px; color: var(--text-muted); font-size: 1.5rem;">Select Status:</p>
+                    <div class="quick-btns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+                        
+                        <!-- Composite Cards -->
+                        <div class="quick-card" data-val="Lunch">
+                            <div class="quick-card-main">🍔 Lunch</div>
+                            <div class="quick-card-actions">
+                                <div class="btn-time" data-val="Lunch"><i class="fa-regular fa-clock"></i></div>
+                                <div class="btn-edit" data-val="Lunch"><i class="fa-solid fa-pencil"></i></div>
+                            </div>
+                        </div>
+                        <div class="quick-card" data-val="Appointment">
+                            <div class="quick-card-main">📅 Appt</div>
+                            <div class="quick-card-actions">
+                                <div class="btn-time" data-val="Appointment"><i class="fa-regular fa-clock"></i></div>
+                                <div class="btn-edit" data-val="Appointment"><i class="fa-solid fa-pencil"></i></div>
+                            </div>
+                        </div>
+                        <div class="quick-card" data-val="Meeting">
+                            <div class="quick-card-main">🤝 Meeting</div>
+                            <div class="quick-card-actions">
+                                <div class="btn-time" data-val="Meeting"><i class="fa-regular fa-clock"></i></div>
+                                <div class="btn-edit" data-val="Meeting"><i class="fa-solid fa-pencil"></i></div>
+                            </div>
+                        </div>
+                        <div class="quick-card" data-val="TDY">
+                            <div class="quick-card-main">✈️ TDY</div>
+                            <div class="quick-card-actions">
+                                <div class="btn-time" data-val="TDY"><i class="fa-regular fa-clock"></i></div>
+                                <div class="btn-edit" data-val="TDY"><i class="fa-solid fa-pencil"></i></div>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <button class="btn-custom-out" id="btn-custom-out" style="width: 100%; font-size: 1.8rem; padding: 20px; background: #333; color: white; border: none; border-radius: 8px;">Or Custom Location & Comment...</button>
                 </div>
-                
-                <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <p style="margin-bottom: 10px; color: var(--text-muted); font-size: 1.5rem;">Will Return By (Optional):</p>
-                    <div style="display: flex; gap: 15px;">
-                        <input type="date" id="kiosk-return-date" style="flex: 1; font-size: 1.8rem; padding: 15px; background: #222; color: white; border: 1px solid #444; border-radius: 8px;">
-                        <input type="time" id="kiosk-return-time" style="flex: 1; font-size: 1.8rem; padding: 15px; background: #222; color: white; border: 1px solid #444; border-radius: 8px;">
+
+                <!-- Time Picker View -->
+                <div id="kiosk-view-time" class="hidden">
+                    <h3 id="kiosk-time-title" style="margin-bottom: 15px; font-size: 2rem;">Return Time</h3>
+                    <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin-bottom: 10px; color: var(--text-muted); font-size: 1.5rem;">Will Return By (Optional):</p>
+                        <div style="display: flex; gap: 15px;">
+                            <input type="date" id="kiosk-return-date" style="flex: 1; font-size: 2rem; padding: 20px; background: #222; color: white; border: 1px solid #444; border-radius: 8px;">
+                            <input type="time" id="kiosk-return-time" style="flex: 1; font-size: 2rem; padding: 20px; background: #222; color: white; border: 1px solid #444; border-radius: 8px;">
+                        </div>
                     </div>
                 </div>
 
-                <p style="margin: 10px 0; color: var(--text-muted); font-size: 1.5rem;">Or type custom comment (Keyboard Required):</p>
-                <input type="text" id="kiosk-custom-comment" placeholder="Type here..." autocomplete="off" style="width: 100%; font-size: 1.8rem; padding: 15px; background: #222; color: white; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px;">
+                <!-- Free Text / Custom View -->
+                <div id="kiosk-view-custom" class="hidden">
+                    <h3 id="kiosk-custom-title" style="margin-bottom: 15px; font-size: 2rem;">Custom Comment</h3>
+                    <input type="text" id="kiosk-custom-comment" placeholder="Type here..." autocomplete="off" style="width: 100%; font-size: 1.8rem; padding: 15px; background: #222; color: white; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px;">
+                    <div class="simple-keyboard" style="color: #000;"></div>
+                </div>
             </div>
 
             <div class="kiosk-footer" style="margin-top: 15px; display: flex; gap: 10px;">
@@ -121,6 +165,6 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js?v=18"></script>
+    <script src="/static/js/app.js?v=19"></script>
 </body>
 </html>
