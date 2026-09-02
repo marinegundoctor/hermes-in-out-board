@@ -189,13 +189,13 @@ document.addEventListener('DOMContentLoaded', () => {
             kioskActionText.style.color = 'var(--status-in)';
             kioskOutOptions.classList.add('hidden');
             kioskSkipBtn.classList.add('hidden');
-            startKioskTimer(3000, true);
+            startKioskTimer(6000, true);
         } else {
             kioskActionText.innerText = "Checking OUT.";
             kioskActionText.style.color = 'var(--status-out)';
             kioskOutOptions.classList.remove('hidden');
             kioskSkipBtn.classList.remove('hidden');
-            startKioskTimer(10000, true);
+            startKioskTimer(20000, true);
         }
     }
 

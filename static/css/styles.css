@@ -276,3 +276,35 @@ body.kiosk-mode .clickable-row {
 body.kiosk-mode .clickable-row:hover, body.kiosk-mode .clickable-row:active {
     background: rgba(255, 255, 255, 0.1);
 }
+
+body.kiosk-mode .modal-content {
+    margin: 2% auto;
+    width: 95%;
+    max-width: 900px;
+    padding: 30px;
+}
+body.kiosk-mode #kiosk-greeting {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+body.kiosk-mode #kiosk-action-text {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+}
+body.kiosk-mode .btn-quick {
+    font-size: 1.3rem;
+    padding: 15px;
+}
+body.kiosk-mode #kiosk-custom-comment {
+    font-size: 1.5rem;
+    padding: 15px;
+    height: 50px;
+}
+body.kiosk-mode .btn {
+    font-size: 1.3rem;
+    padding: 15px 25px;
+}
+body.kiosk-mode #kiosk-timer {
+    font-size: 1.2rem;
+    margin-top: 15px;
+}
