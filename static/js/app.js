@@ -172,7 +172,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     window.handleBadgeTap = handleBadgeTap;
+    
+    let isProcessingTap = false;
     async function handleBadgeTap(uid) {
+        if (isProcessingTap) return;
+        isProcessingTap = true;
+        setTimeout(() => { isProcessingTap = false; }, 1000); // 1 second debounce to prevent pointerdown + click double fires
+
         // If someone else is already tapped and waiting, submit them immediately before proceeding
         if (pendingUid && pendingUid !== uid && !kioskModal.classList.contains('hidden')) {
             submitKioskData(); // Submit the previous person OUT
@@ -233,16 +239,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     kioskSkipBtn.addEventListener('click', () => {
-        submitKioskData(kioskCustomInput.value.trim() ? "Unknown" : "--", kioskCustomInput.value.trim());
+        submitKioskData(kioskCustomInput.value.trim() ? "Unknown" : "--", kioskCustomInput.value.trim() || "--");
     });
 
     kioskCancelBtn.addEventListener('click', () => {
         resetKiosk();
     });
 
-    async function submitKioskData(locationVal = "--", commentVal = "") {
+    async function submitKioskData(locationVal = "--", commentVal = "--") {
         if (kioskTimer) clearInterval(kioskTimer);
-        if (!commentVal && kioskCustomInput.value.trim()) {
+        
+        // If they typed something but didn't click a quick button
+        if (commentVal === "--" && kioskCustomInput.value.trim()) {
             commentVal = kioskCustomInput.value.trim();
             locationVal = "Unknown";
         }

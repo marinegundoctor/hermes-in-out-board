@@ -308,3 +308,11 @@ body.kiosk-mode #kiosk-timer {
     font-size: 1.2rem;
     margin-top: 15px;
 }
+
+body.kiosk-mode .simple-keyboard.hg-theme-default .hg-button {
+    height: 120px !important;
+    font-size: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
