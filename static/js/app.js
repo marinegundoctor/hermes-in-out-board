@@ -201,6 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
             kioskModal.classList.remove('hidden');
             kioskGreeting.innerText = `Hello, ${user.name}!`;
             kioskCustomInput.value = '';
+            document.getElementById('kiosk-return-date').value = '';
+            document.getElementById('kiosk-return-time').value = '';
             
             kioskActionText.innerText = "Checking OUT.";
             kioskActionText.style.color = 'var(--status-out)';
@@ -231,6 +233,16 @@ document.addEventListener('DOMContentLoaded', () => {
         kioskProgressBar.style.width = '100%';
         kioskProgressBar.style.background = '#0284c7';
     });
+    document.getElementById('kiosk-return-date').addEventListener('input', () => {
+        if (kioskTimer) clearInterval(kioskTimer);
+        kioskProgressBar.style.width = '100%';
+        kioskProgressBar.style.background = '#0284c7';
+    });
+    document.getElementById('kiosk-return-time').addEventListener('input', () => {
+        if (kioskTimer) clearInterval(kioskTimer);
+        kioskProgressBar.style.width = '100%';
+        kioskProgressBar.style.background = '#0284c7';
+    });
 
     quickBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -249,10 +261,34 @@ document.addEventListener('DOMContentLoaded', () => {
     async function submitKioskData(locationVal = "--", commentVal = "--") {
         if (kioskTimer) clearInterval(kioskTimer);
         
-        // If they typed something but didn't click a quick button
-        if (commentVal === "--" && kioskCustomInput.value.trim()) {
-            commentVal = kioskCustomInput.value.trim();
+        let retComment = getReturnComment();
+        let customInputVal = kioskCustomInput.value.trim();
+        
+        // If they tapped "Finish & Submit" without a quick button, the location is Unknown if they typed something.
+        if (locationVal === "--" && (customInputVal || retComment)) {
             locationVal = "Unknown";
+        }
+
+        // Determine final comment
+        if (commentVal === "--") {
+            commentVal = "";
+        }
+        
+        // If they provided a custom input, use it (it overrides the default "" from quick buttons if any)
+        if (customInputVal) {
+            commentVal = customInputVal;
+        }
+
+        if (retComment) {
+            if (commentVal) {
+                commentVal += ` (${retComment})`;
+            } else {
+                commentVal = retComment;
+            }
+        }
+        
+        if (!commentVal) {
+            commentVal = "--";
         }
         try {
             const res = await fetch('/api/tap', {
@@ -275,35 +311,24 @@ document.addEventListener('DOMContentLoaded', () => {
         kioskProgressBar.style.background = 'var(--accent-yellow)';
     }
 
-    // Initialize Virtual Keyboard if library is loaded
-    if (window.SimpleKeyboard) {
-        const Keyboard = window.SimpleKeyboard.default;
-        window.kioskKeyboard = new Keyboard({
-            onChange: input => {
-                kioskCustomInput.value = input;
-                // reset timer if they are typing
-                startKioskTimer(15000, false);
-            },
-            onKeyPress: button => {
-                if (button === "{enter}") {
-                    kioskSkipBtn.click();
-                }
-            },
-            layout: {
-                'default': [
-                    'q w e r t y u i o p',
-                    'a s d f g h j k l',
-                    '{shift} z x c v b n m {bksp}',
-                    '{space} {enter}'
-                ],
-                'shift': [
-                    'Q W E R T Y U I O P',
-                    'A S D F G H J K L',
-                    '{shift} Z X C V B N M {bksp}',
-                    '{space} {enter}'
-                ]
-            }
-        });
+    const returnDateInput = document.getElementById('kiosk-return-date');
+    const returnTimeInput = document.getElementById('kiosk-return-time');
+
+    function getReturnComment() {
+        let rd = returnDateInput.value;
+        let rt = returnTimeInput.value;
+        if (!rd && !rt) return "";
+        
+        let cmt = "Return by ";
+        if (rd && !rt) {
+            cmt += rd;
+        } else if (!rd && rt) {
+            let today = new Date();
+            cmt += `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')} ${rt}`;
+        } else {
+            cmt += `${rd} ${rt}`;
+        }
+        return cmt;
     }
 
     loadData();
