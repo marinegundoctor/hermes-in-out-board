@@ -226,6 +226,26 @@ class CardActionRequest(BaseModel):
     location: str = ""
     comment: str = ""
 
+
+class TapActionRequest(BaseModel):
+    uid: str
+    location: str = "--"
+    comment: str = ""
+
+@app.post("/api/tap")
+def kiosk_tap_action(req: TapActionRequest):
+    with get_db() as conn:
+        user = conn.execute("SELECT status FROM users WHERE uid = ?", (req.uid,)).fetchone()
+        if not user:
+            return {"success": False, "error": "User not found"}
+            
+        if user['status'] == 'out':
+            conn.execute("UPDATE users SET status = 'in', location = '--', comment = '--', last_updated = CURRENT_TIMESTAMP WHERE uid = ?", (req.uid,))
+        else:
+            conn.execute("UPDATE users SET status = 'out', location = ?, comment = ?, last_updated = CURRENT_TIMESTAMP WHERE uid = ?", (req.location, req.comment, req.uid))
+        conn.commit()
+    return {"success": True}
+
 @app.post("/api/scans/action")
 def resolve_card_action(req: CardActionRequest):
     global pending_card_scan
