@@ -5,11 +5,66 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import sqlite3
 import os
+import asyncio
+import time
+import urllib.request
 from contextlib import asynccontextmanager
 from collections import defaultdict
 
-import os
 DB_FILE = os.environ.get("DB_PATH", "inout.db")
+
+network_status = {
+    "status": "online",
+    "latency_ms": 0.0,
+    "last_checked": 0.0
+}
+
+def _probe_url(url: str, timeout: float = 2.5) -> float:
+    t0 = time.time()
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "Hermes-Internet-Watchdog/1.0"}
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as res:
+        if res.status in (200, 204):
+            return (time.time() - t0) * 1000.0
+    return -1.0
+
+def check_internet_sync():
+    # Primary probe: Google 204 (Captive Portal / Connectivity Check)
+    try:
+        latency = _probe_url("http://connectivitycheck.gstatic.com/generate_204", timeout=2.0)
+        if latency >= 0:
+            if latency < 500:
+                return "online", round(latency, 1)
+            else:
+                return "degraded", round(latency, 1)
+    except Exception:
+        pass
+
+    # Secondary probe: Firefox detectportal
+    try:
+        latency = _probe_url("http://detectportal.firefox.com/success.txt", timeout=2.5)
+        if latency >= 0:
+            return "degraded", round(latency, 1)
+    except Exception:
+        pass
+
+    return "offline", 0.0
+
+async def network_watchdog_loop():
+    global network_status
+    while True:
+        try:
+            status, latency = await asyncio.to_thread(check_internet_sync)
+            network_status["status"] = status
+            network_status["latency_ms"] = latency
+            network_status["last_checked"] = time.time()
+        except Exception:
+            network_status["status"] = "offline"
+            network_status["latency_ms"] = 0.0
+            network_status["last_checked"] = time.time()
+        await asyncio.sleep(10)
 
 def get_db():
     conn = sqlite3.connect(DB_FILE, timeout=10.0)
@@ -72,7 +127,13 @@ def init_db():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    watchdog_task = asyncio.create_task(network_watchdog_loop())
     yield
+    watchdog_task.cancel()
+    try:
+        await watchdog_task
+    except asyncio.CancelledError:
+        pass
 
 app = FastAPI(lifespan=lifespan)
 
@@ -144,7 +205,13 @@ def get_users():
 def get_settings():
     with get_db() as conn:
         settings = conn.execute("SELECT * FROM app_settings WHERE id = 1").fetchone()
-        return dict(settings) if settings else {}
+        data = dict(settings) if settings else {}
+        data["internet"] = network_status
+        return data
+
+@app.get("/api/network/status")
+def get_network_status():
+    return network_status
 
 
 # --- SMART CARD ENDPOINTS ---

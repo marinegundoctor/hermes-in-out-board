@@ -47,34 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateClocks();
 
     async function loadData() {
-        // Check Internet Status
         const netDot = document.getElementById('internet-status-dot');
         const netText = document.getElementById('internet-status-text');
-        if (netDot && netText) {
-            if (navigator.onLine) {
-                let isSlow = false;
-                if (navigator.connection && navigator.connection.effectiveType) {
-                    const et = navigator.connection.effectiveType;
-                    if (et === 'slow-2g' || et === '2g' || et === '3g') {
-                        isSlow = true;
-                    }
-                }
-                
-                if (isSlow) {
-                    netDot.style.background = 'var(--accent-yellow)';
-                    netDot.style.boxShadow = '0 0 8px var(--accent-yellow)';
-                    netText.style.color = 'var(--accent-yellow)';
-                } else {
-                    netDot.style.background = 'var(--status-in)';
-                    netDot.style.boxShadow = '0 0 8px var(--status-in)';
-                    netText.style.color = 'var(--text-muted)';
-                }
-            } else {
-                netDot.style.background = 'var(--status-out)';
-                netDot.style.boxShadow = '0 0 8px var(--status-out)';
-                netText.style.color = 'var(--status-out)';
-            }
-        }
+
         try {
             const [usersRes, settingsRes] = await Promise.all([
                 fetch('/api/users'),
@@ -90,6 +65,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('news-body').innerText = settings.news_body || '';
                 document.getElementById('news-author').innerText = settings.news_author || settings.org_name || '';
                 document.getElementById('banner-org-name').innerText = settings.org_name || '';
+
+                // Backend-driven Internet Status
+                if (netDot && netText) {
+                    if (settings.internet) {
+                        const netStatus = settings.internet.status;
+                        const latency = settings.internet.latency_ms;
+                        if (netStatus === 'online') {
+                            netDot.style.background = 'var(--status-in)';
+                            netDot.style.boxShadow = '0 0 8px var(--status-in)';
+                            netText.innerText = 'Internet';
+                            netText.style.color = 'var(--text-muted)';
+                            netText.title = latency ? `Latency: ${latency}ms` : 'Internet Online';
+                        } else if (netStatus === 'degraded') {
+                            netDot.style.background = 'var(--accent-yellow)';
+                            netDot.style.boxShadow = '0 0 8px var(--accent-yellow)';
+                            netText.innerText = 'Degraded';
+                            netText.style.color = 'var(--accent-yellow)';
+                            netText.title = latency ? `Slow response: ${latency}ms` : 'Connection degraded';
+                        } else {
+                            netDot.style.background = 'var(--status-out)';
+                            netDot.style.boxShadow = '0 0 8px var(--status-out)';
+                            netText.innerText = 'Offline';
+                            netText.style.color = 'var(--status-out)';
+                            netText.title = 'No internet connection';
+                        }
+                    } else {
+                        // Fallback if older backend without internet key
+                        netDot.style.background = navigator.onLine ? 'var(--status-in)' : 'var(--status-out)';
+                        netDot.style.boxShadow = `0 0 8px ${navigator.onLine ? 'var(--status-in)' : 'var(--status-out)'}`;
+                        netText.innerText = navigator.onLine ? 'Internet' : 'Offline';
+                        netText.style.color = navigator.onLine ? 'var(--text-muted)' : 'var(--status-out)';
+                    }
+                }
             }
             
             document.getElementById('backend-status-dot').style.backgroundColor = 'var(--status-in)';
@@ -102,7 +110,15 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('backend-status-dot').style.backgroundColor = 'var(--status-out)';
             document.getElementById('backend-status-dot').style.boxShadow = '0 0 8px var(--status-out)';
             document.getElementById('backend-status-text').innerText = 'Backend';
-            document.getElementById('backend-status-text').style.color = 'var(--text-muted)';
+            document.getElementById('backend-status-text').style.color = 'var(--status-out)';
+
+            if (netDot && netText) {
+                netDot.style.background = 'var(--status-out)';
+                netDot.style.boxShadow = '0 0 8px var(--status-out)';
+                netText.innerText = 'Unknown';
+                netText.style.color = 'var(--status-out)';
+                netText.title = 'Cannot communicate with backend';
+            }
         }
     }
 

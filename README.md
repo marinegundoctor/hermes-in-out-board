@@ -7,12 +7,14 @@ Instead of employees clicking buttons or using specific commands, they can simpl
 ## Features
 - **Smart Card / CAC / Badge Integration**: Employees can simply tap their ID card to log in/out directly at the Kiosk. (Supports HID Omnikey, ACR122U, and most PC/SC CCID compliant readers).
 - **Real-time Kiosk Display**: A sleek, auto-updating web dashboard ideal for a TV or Raspberry Pi display monitor.
+- **Backend Internet Watchdog**: The Python backend continuously monitors upstream connectivity and roundtrip latency using captive portal probes, driving live connection health indicators (Online, Degraded, Offline) uniformly across all connected screens.
 - **Telegram Integration**: Employees manage their status entirely through a secure Telegram bot.
 - **Zero-Touch Setup**: Backend initializes dynamically. The web dashboard guides the administrator through the initial configuration.
 - **Dockerized**: Deploy anywhere instantly using Docker Compose.
 
-## Optional OS-Level Features
+## Optional OS-Level Features & Architecture
 - **Wi-Fi Watchdog**: Includes a completely optional host-level script (`scripts/wifi_watchdog.sh`) for advanced setups that require resilient Wi-Fi internet failover. This script sits entirely outside of the Docker container and manages the host operating system's Wi-Fi connection directly. See [scripts/README.md](scripts/README.md) for setup details.
+- **Remote Kiosk Displays (Hermes Display Net)**: Connect secondary displays (Orange Pi, Raspberry Pi, or any single-board computer running DietPi or minimal Linux) across shops or hallways over an isolated local hotspot (`Hermes-Display-Net`). Features dynamic display auto-scaling and Tailscale bypass techniques for filtered corporate networks. See [docs/remote_display_setup.md](docs/remote_display_setup.md) for the setup guide.
 
 ## Prerequisites
 - Docker and Docker Compose
