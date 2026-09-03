@@ -2,7 +2,7 @@
 
 A modern, AI-powered digital In/Out board designed for professional environments (offices, military units, etc.). It features a clean web-based Kiosk display and uses a Telegram Bot ("Hermes") to process natural language status updates.
 
-Instead of employees clicking buttons or using specific commands, they can simply message the bot conversationally (e.g., "Running late due to traffic, I'll be in around 0930"). The bot leverages Meta Llama 3.1 (via DeepInfra) to extract their status, location, and a professional comment, instantly updating the Kiosk display.
+Instead of employees clicking buttons or using specific commands, they can simply message the bot conversationally (e.g., "Running late due to traffic, I'll be in around 0930"). The bot leverages Meta Llama 3.1 8B Instruct Turbo (via DeepInfra) which is extremely low cost (around $0.02 per 1M tokens in, $0.04 per 1M tokens out) to extract their status, location, and a professional comment, instantly updating the Kiosk display.
 
 ## Features
 - **Smart Card / CAC / Badge Integration**: Employees can simply tap their ID card to log in/out directly at the Kiosk. (Supports HID Omnikey, ACR122U, and most PC/SC CCID compliant readers).
@@ -10,6 +10,9 @@ Instead of employees clicking buttons or using specific commands, they can simpl
 - **Telegram Integration**: Employees manage their status entirely through a secure Telegram bot.
 - **Zero-Touch Setup**: Backend initializes dynamically. The web dashboard guides the administrator through the initial configuration.
 - **Dockerized**: Deploy anywhere instantly using Docker Compose.
+
+## Optional OS-Level Features
+- **Wi-Fi Watchdog**: Includes a completely optional host-level script (`scripts/wifi_watchdog.sh`) for advanced setups that require resilient Wi-Fi internet failover. This script sits entirely outside of the Docker container and manages the host operating system's Wi-Fi connection directly. See [scripts/README.md](scripts/README.md) for setup details.
 
 ## Prerequisites
 - Docker and Docker Compose
