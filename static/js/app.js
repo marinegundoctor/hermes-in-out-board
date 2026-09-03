@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCustomOut = document.getElementById('btn-custom-out');
     
     let selectedQuickLocation = "";
+    let modalOpenTime = 0;
 
     let allUsers = [];
     let kioskTimer = null;
@@ -217,6 +218,8 @@ document.addEventListener('DOMContentLoaded', () => {
             kioskViewTime.classList.add('hidden');
             kioskViewCustom.classList.add('hidden');
             
+            modalOpenTime = Date.now();
+            
             kioskSkipBtn.classList.add('hidden');
             kioskCancelBtn.innerText = "Cancel";
             kioskCancelBtn.style.width = "100%";
@@ -258,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.quick-card-main').forEach(btn => {
         btn.addEventListener('click', (e) => {
+            if (Date.now() - modalOpenTime < 500) return; // Prevent ghost clicks
             const loc = e.target.parentElement.getAttribute('data-val');
             submitKioskData(loc, "--");
         });
@@ -278,6 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.btn-time').forEach(btn => {
         btn.addEventListener('click', (e) => {
+            if (Date.now() - modalOpenTime < 500) return;
             selectedQuickLocation = e.currentTarget.getAttribute('data-val');
             showSubView(kioskViewTime, 'kiosk-time-title', `Return Time for ${selectedQuickLocation}`);
         });
@@ -285,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.btn-edit').forEach(btn => {
         btn.addEventListener('click', (e) => {
+            if (Date.now() - modalOpenTime < 500) return;
             selectedQuickLocation = e.currentTarget.getAttribute('data-val');
             showSubView(kioskViewCustom, 'kiosk-custom-title', `Custom Comment for ${selectedQuickLocation}`);
             kioskCustomInput.value = '';
@@ -296,7 +302,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    btnCustomOut.addEventListener('click', () => {
+    btnCustomOut.addEventListener('click', (e) => {
+        if (Date.now() - modalOpenTime < 500) return;
         selectedQuickLocation = "Unknown";
         showSubView(kioskViewCustom, 'kiosk-custom-title', `Custom Location & Comment`);
         kioskCustomInput.value = '';
