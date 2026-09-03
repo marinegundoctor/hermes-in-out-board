@@ -310,6 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedQuickLocation = e.currentTarget.getAttribute('data-val');
             showSubView(kioskViewCustom, 'kiosk-custom-title', `Custom Comment for ${selectedQuickLocation}`);
             kioskCustomInput.value = '';
+            kioskCustomInput.focus();
             
             if (window.kioskKeyboard) {
                 window.kioskKeyboard.setInput('');
@@ -323,6 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedQuickLocation = "Unknown";
         showSubView(kioskViewCustom, 'kiosk-custom-title', `Custom Location & Comment`);
         kioskCustomInput.value = '';
+        kioskCustomInput.focus();
         
         if (window.kioskKeyboard) {
             window.kioskKeyboard.setInput('');
