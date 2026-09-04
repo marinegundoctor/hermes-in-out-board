@@ -186,9 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
             boardsContainer.appendChild(section);
         }
 
-        if (!isKiosk) {
-            setTimeout(fitBoardToScreen, 50);
-        }
+        setTimeout(fitBoardToScreen, 50);
     }
 
     function fitBoardToScreen() {
@@ -208,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     window.addEventListener('resize', () => {
-        if (!isKiosk) fitBoardToScreen();
+        fitBoardToScreen();
     });
 
 
@@ -390,6 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Date.now() - modalOpenTime < 500) return;
             selectedQuickLocation = "--";
             kioskCustomInput.value = "--";
+            document.querySelectorAll('.kiosk-time-select').forEach(s => s.value = "");
             submitKioskData("--", "--");
         });
     }
@@ -401,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let customInputVal = kioskCustomInput.value.trim();
         
         // If they tapped "Finish & Submit" without a quick button, the location is Unknown if they typed something.
-        if (locationVal === "--" && (customInputVal || retComment)) {
+        if (locationVal === "--" && commentVal !== "--" && (customInputVal && customInputVal !== "--" || retComment)) {
             locationVal = "Unknown";
         }
 

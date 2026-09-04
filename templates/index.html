@@ -46,7 +46,7 @@
                     <h2 id="news-body">{{ settings.news_body }}</h2>
                     <p id="news-author">{% if settings.news_author %}{{ settings.news_author }}{% else %}{{ settings.org_name }}{% endif %}</p>
                 </div>
-                <div style="display: flex; flex-direction: column; text-align: right; gap: 10px; min-width: 150px;">
+                <div style="display: flex; flex-direction: row; gap: 30px; text-align: right; min-width: 250px;">
                     <div>
                         <div style="font-size: 0.9rem; color: var(--accent-yellow); font-weight: bold;"><i class="fa-regular fa-clock"></i> LOCAL TIME</div>
                         <div style="font-size: 1.8rem; font-weight: bold;" id="time-local">--:--</div>
@@ -159,6 +159,6 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js?v=22"></script>
+    <script src="/static/js/app.js?v=23"></script>
 </body>
 </html>
