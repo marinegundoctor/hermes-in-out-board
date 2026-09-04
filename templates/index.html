@@ -38,34 +38,25 @@
         </nav>
 
         <main class="dashboard">
-            <section class="panel announcement-panel">
-                <div class="panel-header">
-                    <span class="badge yellow"><i class="fa-solid fa-bullhorn"></i> <span id="news-title">{{ settings.news_title }}</span></span>
+            <section class="panel announcement-panel" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="flex: 1;">
+                    <div class="panel-header">
+                        <span class="badge yellow"><i class="fa-solid fa-bullhorn"></i> <span id="news-title">{{ settings.news_title }}</span></span>
+                    </div>
+                    <h2 id="news-body">{{ settings.news_body }}</h2>
+                    <p id="news-author">{% if settings.news_author %}{{ settings.news_author }}{% else %}{{ settings.org_name }}{% endif %}</p>
                 </div>
-                <h2 id="news-body">{{ settings.news_body }}</h2>
-                <p id="news-author">{% if settings.news_author %}{{ settings.news_author }}{% else %}{{ settings.org_name }}{% endif %}</p>
-            </section>
-
-            <section class="clocks-grid">
-                <div class="clock-panel">
-                    <div class="clock-title"><i class="fa-regular fa-clock"></i> WEST COAST <span class="tz">PDT</span></div>
-                    <div class="time" id="time-pdt">--:--</div>
-                    <div class="date" id="date-pdt">---</div>
-                </div>
-                <div class="clock-panel active-clock">
-                    <div class="clock-title"><i class="fa-regular fa-clock"></i> LOCAL TIME</div>
-                    <div class="time" id="time-local">--:--</div>
-                    <div class="date" id="date-local">---</div>
-                </div>
-                <div class="clock-panel">
-                    <div class="clock-title"><i class="fa-regular fa-clock"></i> EAST COAST <span class="tz">EDT</span></div>
-                    <div class="time" id="time-edt">--:--</div>
-                    <div class="date" id="date-edt">---</div>
-                </div>
-                <div class="clock-panel">
-                    <div class="clock-title"><i class="fa-regular fa-clock"></i> UTC <span class="tz">UTC</span></div>
-                    <div class="time" id="time-utc">--:--</div>
-                    <div class="date" id="date-utc">---</div>
+                <div style="display: flex; flex-direction: column; text-align: right; gap: 10px; min-width: 150px;">
+                    <div>
+                        <div style="font-size: 0.9rem; color: var(--accent-yellow); font-weight: bold;"><i class="fa-regular fa-clock"></i> LOCAL TIME</div>
+                        <div style="font-size: 1.8rem; font-weight: bold;" id="time-local">--:--</div>
+                        <div style="font-size: 0.9rem; color: #888;" id="date-local">---</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.9rem; color: var(--accent-yellow); font-weight: bold;"><i class="fa-regular fa-clock"></i> UTC</div>
+                        <div style="font-size: 1.8rem; font-weight: bold;" id="time-utc">--:--</div>
+                        <div style="font-size: 0.9rem; color: #888;" id="date-utc">---</div>
+                    </div>
                 </div>
             </section>
 
@@ -96,7 +87,10 @@
             <div id="kiosk-out-options" class="hidden">
                 <!-- Main View -->
                 <div id="kiosk-view-main">
-                    <p style="margin-bottom: 10px; color: var(--text-muted); font-size: 1.5rem;">Select Status:</p>
+                    <button id="btn-just-sign-out" style="width: 100%; font-size: 1.8rem; padding: 20px; background: var(--status-out); color: white; border: none; border-radius: 8px; margin-bottom: 20px; font-weight: bold; box-shadow: 0 0 10px rgba(220, 53, 69, 0.4);">
+                        JUST SIGN ME OUT (<span id="btn-just-sign-out-timer">15</span>s)
+                    </button>
+                    <p style="margin-bottom: 10px; color: var(--text-muted); font-size: 1.5rem;">Or Select Status:</p>
                     <div class="quick-btns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
                         
                         <!-- Composite Cards -->
@@ -165,6 +159,6 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js?v=21"></script>
+    <script src="/static/js/app.js?v=22"></script>
 </body>
 </html>

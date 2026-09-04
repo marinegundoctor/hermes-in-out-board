@@ -36,10 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         document.getElementById('time-local').innerText = formatTime(now, Intl.DateTimeFormat().resolvedOptions().timeZone);
         document.getElementById('date-local').innerText = formatDate(now, Intl.DateTimeFormat().resolvedOptions().timeZone);
-        document.getElementById('time-pdt').innerText = formatTime(now, 'America/Los_Angeles');
-        document.getElementById('date-pdt').innerText = formatDate(now, 'America/Los_Angeles');
-        document.getElementById('time-edt').innerText = formatTime(now, 'America/New_York');
-        document.getElementById('date-edt').innerText = formatDate(now, 'America/New_York');
         document.getElementById('time-utc').innerText = formatTime(now, 'UTC');
         document.getElementById('date-utc').innerText = formatDate(now, 'UTC');
     }
@@ -189,7 +185,31 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             boardsContainer.appendChild(section);
         }
+
+        if (!isKiosk) {
+            setTimeout(fitBoardToScreen, 50);
+        }
     }
+
+    function fitBoardToScreen() {
+        const container = document.getElementById('boards-container');
+        if (!container) return;
+        container.style.zoom = 1; // Reset
+        
+        // Calculate available height: window height minus top nav minus announcement panel minus padding/margins
+        const navHeight = document.querySelector('.top-nav')?.offsetHeight || 60;
+        const announcementHeight = document.querySelector('.announcement-panel')?.offsetHeight || 80;
+        const availableHeight = window.innerHeight - navHeight - announcementHeight - 60;
+        
+        if (container.scrollHeight > availableHeight && availableHeight > 0) {
+            const ratio = availableHeight / container.scrollHeight;
+            container.style.zoom = ratio;
+        }
+    }
+    
+    window.addEventListener('resize', () => {
+        if (!isKiosk) fitBoardToScreen();
+    });
 
 
 
@@ -251,6 +271,12 @@ document.addEventListener('DOMContentLoaded', () => {
             elapsed += updateInterval;
             let percent = 100 - ((elapsed / duration) * 100);
             kioskProgressBar.style.width = `${Math.max(0, percent)}%`;
+            
+            const soTimer = document.getElementById('btn-just-sign-out-timer');
+            if (soTimer && autoSubmit) {
+                soTimer.innerText = Math.ceil((duration - elapsed) / 1000);
+            }
+            
             if (elapsed >= duration) {
                 clearInterval(kioskTimer);
                 if (autoSubmit) submitKioskData();
@@ -338,6 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     kioskCancelBtn.addEventListener('click', () => {
+        if (Date.now() - modalOpenTime < 500) return;
         if (!kioskViewMain.classList.contains('hidden')) {
             resetKiosk();
         } else {
@@ -356,6 +383,16 @@ document.addEventListener('DOMContentLoaded', () => {
             startKioskTimer(15000, false);
         }
     });
+
+    const btnJustSignOut = document.getElementById('btn-just-sign-out');
+    if (btnJustSignOut) {
+        btnJustSignOut.addEventListener('click', () => {
+            if (Date.now() - modalOpenTime < 500) return;
+            selectedQuickLocation = "--";
+            kioskCustomInput.value = "--";
+            submitKioskData("--", "--");
+        });
+    }
 
     async function submitKioskData(locationVal = "--", commentVal = "--") {
         if (kioskTimer) clearInterval(kioskTimer);
@@ -847,7 +884,7 @@ document.addEventListener('keydown', (e) => {
             newUserName = name;
             newUserRank = rank;
             
-            availableGroups = Array.from(document.querySelectorAll('.group-header h3'))
+            availableGroups = Array.from(document.querySelectorAll('.board-header h3'))
                                    .map(h => h.innerText)
                                    .filter(g => g !== 'Unassigned');
             availableGroups = [...new Set(availableGroups)];
@@ -855,14 +892,15 @@ document.addEventListener('keydown', (e) => {
             cardState = 'REGISTER_GROUP';
             
             let groupHtml = `<h2 style="font-size: 3.5rem;">Select Group</h2>
-                             <div style="display: flex; flex-direction: column; gap: 8px; font-size: 2.4rem; color: #ccc; gap: 16px;">`;
+                             <p style="margin-bottom: 20px; font-size: 1.8rem; color: #ccc;">Select an existing group or create a new one.</p>
+                             <div style="display: flex; flex-direction: column; gap: 15px; font-size: 2.2rem;">`;
             
             availableGroups.forEach((g, idx) => {
-                groupHtml += `<div><b style="color:var(--accent-yellow);">${idx + 1}</b> - ${escapeHtml(g)}</div>`;
+                groupHtml += `<button class="quick-card-main" onclick="document.dispatchEvent(new KeyboardEvent('keydown', {'key': '${idx + 1}'}))" style="padding: 15px; text-align: left;"><b style="color:var(--accent-yellow);">${idx + 1}</b> - ${escapeHtml(g)}</button>`;
             });
-            groupHtml += `<div><b style="color:var(--accent-yellow);">0</b> - Create New Group</div>
+            groupHtml += `<button class="quick-card-main" onclick="document.dispatchEvent(new KeyboardEvent('keydown', {'key': '0'}))" style="padding: 15px; text-align: left; background: #333; border: 1px dashed #555;"><b style="color:var(--accent-yellow);">0</b> - Create New Group</button>
                           </div>
-                          <p style="margin-top:30px; color:#888; font-size:1.8rem;">Press option number.</p>
+                          <p style="margin-top:30px; color:#888; font-size:1.8rem;">Tap an option or press the number key.</p>
                           <p style="margin-top:20px; color:#888; font-size:1.5rem;" id="new-user-timeout-msg">Auto-closing in 15 seconds...</p>`;
             
             document.getElementById('smartcard-content').innerHTML = groupHtml;
