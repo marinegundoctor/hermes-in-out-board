@@ -49,6 +49,15 @@ DietPi is recommended for remote displays due to its minimal footprint and built
    ```
    *(Alternatively, edit `/boot/dietpi.txt` and set `SOFTWARE_CHROMIUM_AUTOSTART_URL=http://10.42.0.1:8000`)*.
 
+### Step 2: Install Universal Emoji Fonts
+Because DietPi is heavily stripped down to save space, it does not include modern color emoji fonts. Any emojis typed in by users via the Telegram Bot or Custom Comment fields will render as square boxes with X's on the kiosk display.
+To fix this, install the standard Noto Color Emoji package system-wide on the remote display device:
+```bash
+sudo apt-get update
+sudo apt-get install -y fonts-noto-color-emoji
+```
+Reboot the device or restart the Chromium process so it loads the new font cache.
+
 ---
 
 ## 3. Dynamic Resolution & Fullscreen Auto-Scaling (`kiosk.sh`)
