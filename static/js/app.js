@@ -137,7 +137,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 else outCount++;
 
                 const statusIcon = user.status === 'in' ? '<i class="fa-solid fa-circle"></i> IN' : '<i class="fa-solid fa-circle"></i> OUT';
-                const locationIcon = user.location === '--' ? '' : '<i class="fa-solid fa-building"></i> ';
+                let iconClass = "fa-building";
+                const locLower = user.location.toLowerCase();
+                if (locLower.includes("lunch")) iconClass = "fa-burger";
+                else if (locLower.includes("appt") || locLower.includes("appointment")) iconClass = "fa-calendar-check";
+                else if (locLower.includes("meeting")) iconClass = "fa-handshake";
+                else if (locLower.includes("tdy")) iconClass = "fa-plane";
+                else if (locLower.includes("leave")) iconClass = "fa-umbrella-beach";
+                else if (user.location !== "--") iconClass = "fa-location-dot";
+
+                const locationIcon = user.location === '--' ? '' : `<i class="fa-solid ${iconClass}"></i> `;
                 const rankDisplay = user.rank ? escapeHtml(user.rank) + ' ' : '';
 
                 const rDisplay = user.rank ? escapeHtml(user.rank) : '';

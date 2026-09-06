@@ -206,7 +206,7 @@ body {
 .status-badge i { font-size: 1.1rem; }
 
 .location-cell { display: flex; align-items: center; gap: 8px; }
-.location-cell i { color: var(--text-muted); font-size: 0.8rem; }
+.location-cell i { color: var(--text-muted); }
 .comment-cell { font-style: italic; color: #d1d5db; }
 
 /* MODAL */
