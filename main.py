@@ -10,6 +10,7 @@ import time
 import urllib.request
 from contextlib import asynccontextmanager
 from collections import defaultdict
+from rank_utils import get_sort_weight
 
 DB_FILE = os.environ.get("DB_PATH", "inout.db")
 
@@ -123,6 +124,16 @@ def init_db():
             )
         """)
         conn.commit()
+
+        # Recalculate sort_weight for all users to ensure proper rank sorting
+        try:
+            users = conn.execute("SELECT id, rank FROM users").fetchall()
+            for u in users:
+                w = get_sort_weight(u["rank"] or "")
+                conn.execute("UPDATE users SET sort_weight = ? WHERE id = ?", (w, u["id"]))
+            conn.commit()
+        except Exception as e:
+            print(f"Error backfilling sort_weights: {e}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -277,11 +288,12 @@ def register_new_user(req: RegisterNewUserRequest):
     global pending_card_scan
     import uuid
     uid = str(uuid.uuid4())[:8]
+    sort_weight = get_sort_weight(req.rank)
     with get_db() as conn:
         conn.execute("""
-            INSERT INTO users (email, name, rank, uid, group_name, status, location, comment, card_id) 
-            VALUES (?, ?, ?, ?, ?, 'in', '--', '--', ?)
-        """, (req.email, req.name, req.rank, uid, req.group, req.card_id))
+            INSERT INTO users (email, name, rank, uid, group_name, status, location, comment, card_id, sort_weight) 
+            VALUES (?, ?, ?, ?, ?, 'in', '--', '--', ?, ?)
+        """, (req.email, req.name, req.rank, uid, req.group, req.card_id, sort_weight))
         conn.commit()
     if pending_card_scan and pending_card_scan.get("card_id") == req.card_id:
         pending_card_scan = None

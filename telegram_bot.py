@@ -5,6 +5,7 @@ import os
 import json
 import uuid
 from hermes_ai import parse_status_message, parse_onboarding_name
+from rank_utils import get_sort_weight
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "YOUR_TELEGRAM_TOKEN")
 BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
@@ -13,17 +14,6 @@ DB_FILE = os.environ.get("DB_PATH", "inout.db")
 waiting_for_comment = {} # {chat_id: {"timestamp": ...}}
 onboarding_state = {} # {chat_id: {"step": "name", "name": "", "email": ""}}
 group_confirm_state = {} # {chat_id: {"requested_group": "xyz", "is_onboarding": bool}}
-
-
-def get_sort_weight(rank: str) -> int:
-    r = rank.upper().strip().replace(".", "")
-    weights = {
-        "GEN": 1, "LTG": 2, "MG": 3, "BG": 4, "COL": 5, "LTC": 6, "MAJ": 7, "CPT": 8, "1LT": 9, "2LT": 10,
-        "CW5": 11, "CW4": 12, "CW3": 13, "CW2": 14, "WO1": 15,
-        "SMA": 16, "CSM": 17, "SGM": 17, "1SG": 18, "MSG": 18, "SFC": 19, "SSG": 20, "SGT": 21, "CPL": 22, "SPC": 22, "PFC": 23, "PV2": 24, "PV1": 24,
-        "MR": 30, "MS": 30, "MRS": 30, "CIV": 30
-    }
-    return weights.get(r, 50)
 
 def get_db():
     conn = sqlite3.connect(DB_FILE, timeout=10.0)
@@ -66,7 +56,9 @@ def check_timeouts():
     for chat_id in to_remove:
         del waiting_for_comment[chat_id]
 
-def create_account(chat_id, email, name, group_name, rank="", sort_weight=50):
+def create_account(chat_id, email, name, group_name, rank="", sort_weight=None):
+    if sort_weight is None or sort_weight == 50:
+        sort_weight = get_sort_weight(rank)
     uid = str(uuid.uuid4())[:8]
     with get_db() as conn:
         existing = conn.execute("SELECT id FROM users WHERE email = ? COLLATE NOCASE", (email,)).fetchone()

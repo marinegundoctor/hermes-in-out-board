@@ -118,6 +118,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function getClientRankWeight(rank) {
+        if (!rank) return 99;
+        const r = rank.toUpperCase().replace(/[\s.\-_/]/g, '');
+        if (!r) return 99;
+        const weights = {
+            "GEN": 1, "O10": 1, "LTG": 2, "O9": 2, "MG": 3, "O8": 3, "BG": 4, "O7": 4,
+            "COL": 5, "O6": 5, "LTC": 6, "O5": 6, "MAJ": 7, "O4": 7, "CPT": 8, "CAPT": 8, "O3": 8,
+            "1LT": 9, "1STLT": 9, "O2": 9, "2LT": 10, "2DLT": 10, "2NDLT": 10, "O1": 10,
+            "CW5": 11, "CWO5": 11, "W5": 11, "CW4": 12, "CWO4": 12, "W4": 12, "CW3": 13, "CWO3": 13, "W3": 13,
+            "CW2": 14, "CWO2": 14, "W2": 14, "WO1": 15, "W01": 15, "W1": 15, "WO": 15,
+            "SMA": 16, "CSM": 17, "SGTMAJ": 17, "SGM": 18, "MGYSGT": 18, "E9": 18,
+            "1SG": 19, "1STSGT": 19, "MSG": 20, "MSGT": 20, "E8": 20,
+            "SFC": 21, "GYSGT": 21, "E7": 21,
+            "SSG": 22, "SSGT": 22, "E6": 22,
+            "SGT": 23, "E5": 23,
+            "CPL": 24, "SPC": 25, "SP4": 25, "E4": 25,
+            "PFC": 26, "LCPL": 26, "E3": 26,
+            "PV2": 27, "E2": 27,
+            "PV1": 28, "PVT": 28, "E1": 28,
+            "CIV": 90, "CTR": 90, "MR": 90, "MS": 90, "MRS": 90, "DR": 90
+        };
+        if (weights[r]) return weights[r];
+        for (const k of Object.keys(weights).sort((a, b) => b.length - a.length)) {
+            if (r.startsWith(k)) return weights[k];
+        }
+        return 80;
+    }
+
     function renderTables(users) {
         boardsContainer.innerHTML = '';
         const groups = new Map();
@@ -128,6 +156,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         for (const [groupName, members] of groups.entries()) {
+            members.sort((a, b) => {
+                const wA = (a.sort_weight !== undefined && a.sort_weight !== null && a.sort_weight !== 50) ? a.sort_weight : getClientRankWeight(a.rank);
+                const wB = (b.sort_weight !== undefined && b.sort_weight !== null && b.sort_weight !== 50) ? b.sort_weight : getClientRankWeight(b.rank);
+                if (wA !== wB) return wA - wB;
+                return (a.name || '').localeCompare(b.name || '');
+            });
+
             let inCount = 0;
             let outCount = 0;
             let tbodyHtml = '';
