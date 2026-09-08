@@ -2,7 +2,7 @@
 echo "Starting deployment to Pi at 100.75.95.0..."
 echo "This script will automatically keep retrying until the 4G connection is stable enough."
 
-until rsync -avz --timeout=15 --exclude='.git' --exclude='data' ./ margun@100.75.95.0:~/in-out_board/; do
+until rsync -avz --timeout=30 --exclude='.git' --exclude='data' --exclude='venv' --exclude='__pycache__' ./ margun@100.75.95.0:~/in-out_board/; do
     echo "[!] Connection dropped. Retrying in 5 seconds..."
     sleep 5
 done
