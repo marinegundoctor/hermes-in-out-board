@@ -373,5 +373,5 @@ input[type="time"] {
 /* Flatpickr Touch-Screen Scaling Override */
 .flatpickr-calendar {
     transform: scale(1.8) !important;
-    transform-origin: top left !important;
+    transform-origin: bottom left !important;
 }

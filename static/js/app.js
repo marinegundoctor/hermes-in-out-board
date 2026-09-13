@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     flatpickr("#kiosk-return-date", {
         disableMobile: true,
         dateFormat: "Y-m-d",
+        position: "above",
         onChange: function() {
             if (kioskTimer) clearInterval(kioskTimer);
             kioskProgressBar.style.width = '100%';
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         noCalendar: true,
         dateFormat: "H:i",
         disableMobile: true,
+        position: "above",
         onChange: function() {
             if (kioskTimer) clearInterval(kioskTimer);
             kioskProgressBar.style.width = '100%';
