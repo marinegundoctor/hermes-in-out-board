@@ -107,7 +107,7 @@ To accomplish this without a full desktop environment, we utilize `openbox` and 
    # Launch dual browsers in a loop
    while true; do
        # Display 1 (Touchscreen)
-       /usr/bin/chromium $OPTS --window-position=0,0 --user-data-dir=/root/.config/chromium-display1 "$URL" &
+       /usr/bin/chromium $OPTS --window-position=0,0 --user-data-dir=/root/.config/chromium-display1 "${URL}?view=kiosk" &
        PID1=$!
        
        sleep 2
