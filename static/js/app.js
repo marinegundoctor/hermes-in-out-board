@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         kioskCancelBtn.innerText = "Back";
         kioskCancelBtn.style.width = "30%";
         
-        startKioskTimer(15000, false);
+        startKioskTimer(25000, false);
     }
 
     document.querySelectorAll('.btn-time').forEach(btn => {
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.kioskKeyboard) {
                 document.querySelector('.simple-keyboard').style.display = 'none';
             }
-            startKioskTimer(15000, false);
+            startKioskTimer(20000, true);
         }
     });
 
@@ -836,10 +836,10 @@ document.addEventListener('keydown', (e) => {
                     <div id="comment-box" class="hidden">
                         <input type="text" id="card-comment" maxlength="140" placeholder="Type comment..." style="font-size:2rem; padding: 15px; width: 100%; box-sizing: border-box;">
                     </div>
-                    <p style="margin-top:25px; color:#888; font-size:1.8rem;" id="timeout-msg">Auto-submitting in 10 seconds...</p>
+                    <p style="margin-top:25px; color:#888; font-size:1.8rem;" id="timeout-msg">Auto-submitting in 25 seconds...</p>
                 `;
                 
-                let timeLeft = 10;
+                let timeLeft = 25;
                 commentTimeout = setInterval(() => {
                     timeLeft--;
                     const msg = document.getElementById('timeout-msg');
