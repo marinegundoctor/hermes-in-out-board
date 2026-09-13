@@ -369,3 +369,9 @@ input[type="time"] {
     font-size: 3rem !important; /* Increases the size of the native popup text */
     padding: 25px !important;
 }
+
+/* Flatpickr Touch-Screen Scaling Override */
+.flatpickr-calendar {
+    transform: scale(1.8) !important;
+    transform-origin: top left !important;
+}

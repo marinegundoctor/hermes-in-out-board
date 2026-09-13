@@ -16,6 +16,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const kioskViewTime = document.getElementById('kiosk-view-time');
     const kioskViewCustom = document.getElementById('kiosk-view-custom');
     
+    // Initialize touch-friendly Flatpickr
+    flatpickr("#kiosk-return-date", {
+        disableMobile: true,
+        dateFormat: "Y-m-d",
+        onChange: function() {
+            if (kioskTimer) clearInterval(kioskTimer);
+            kioskProgressBar.style.width = '100%';
+            kioskProgressBar.style.background = '#0284c7';
+        }
+    });
+    
+    flatpickr("#kiosk-return-time", {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        disableMobile: true,
+        onChange: function() {
+            if (kioskTimer) clearInterval(kioskTimer);
+            kioskProgressBar.style.width = '100%';
+            kioskProgressBar.style.background = '#0284c7';
+        }
+    });
+
     const kioskSkipBtn = document.getElementById('kiosk-skip');
     const kioskCancelBtn = document.getElementById('kiosk-cancel');
     const kioskCustomInput = document.getElementById('kiosk-custom-comment');
