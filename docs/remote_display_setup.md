@@ -83,7 +83,7 @@ To accomplish this without a full desktop environment, we utilize `openbox` and 
 
    # Ensure both displays are active side-by-side (Touchscreen on left, Monitor on right)
    xrandr --output HDMI-2 --auto --pos 0x0 --primary
-   xrandr --output HDMI-1 --auto --right-of HDMI-2
+   xrandr --output HDMI-1 --auto --rotate left --right-of HDMI-2
 
    # Map touch input strictly to the touch screen (HDMI-2)
    xinput map-to-output "QDtech MPI1001" HDMI-2 || true
