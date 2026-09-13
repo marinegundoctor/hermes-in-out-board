@@ -386,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
         kioskCancelBtn.innerText = "Back";
         kioskCancelBtn.style.width = "30%";
         
-        startKioskTimer(25000, false);
+        startKioskTimer(35000, false);
     }
 
     document.querySelectorAll('.btn-time').forEach(btn => {
