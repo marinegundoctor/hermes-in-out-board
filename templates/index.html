@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Board - {{ settings.org_name }}</title>
-    <link rel="stylesheet" href="/static/css/styles.css?v=31">
+    <link rel="stylesheet" href="/static/css/styles.css?v=32">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -92,16 +92,16 @@
             <div id="kiosk-out-options" class="hidden">
                 <!-- Main View -->
                 <div id="kiosk-view-main">
-                    <div style="display: flex; gap: 15px; margin-bottom: 20px; width: 100%;">
-                        <button id="btn-main-cancel" style="flex: 0 0 33%; font-size: 1.8rem; padding: 20px; background: var(--status-out); color: white; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); cursor: pointer;">
+                    <div style="display: flex; gap: 12px; margin-bottom: 12px; width: 100%;">
+                        <button id="btn-main-cancel" style="flex: 0 0 33%; font-size: 1.5rem; padding: 14px 15px; background: var(--status-out); color: white; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); cursor: pointer;">
                             <i class="fa-solid fa-xmark"></i> CANCEL
                         </button>
-                        <button id="btn-just-sign-out" style="flex: 1; font-size: 1.8rem; padding: 20px; background: var(--status-in); color: white; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); cursor: pointer;">
+                        <button id="btn-just-sign-out" style="flex: 1; font-size: 1.5rem; padding: 14px 15px; background: var(--status-in); color: white; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); cursor: pointer;">
                             JUST SIGN ME OUT (<span id="btn-just-sign-out-timer">15</span>s)
                         </button>
                     </div>
-                    <p style="margin-bottom: 10px; color: var(--text-muted); font-size: 1.5rem;">Or Select Status:</p>
-                    <div class="quick-btns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+                    <p style="margin-bottom: 6px; color: var(--text-muted); font-size: 1.2rem;">Or Select Status:</p>
+                    <div class="quick-btns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                         
                         <!-- Composite Cards -->
                         <div class="quick-card" data-val="Lunch">
@@ -141,7 +141,7 @@
                         </div>
                     </div>
                     
-                    <button class="btn-custom-out" id="btn-custom-out" style="width: 100%; font-size: 1.8rem; padding: 20px; background: #333; color: white; border: none; border-radius: 8px;">Or Custom Location & Comment...</button>
+                    <button class="btn-custom-out" id="btn-custom-out" style="width: 100%; font-size: 1.4rem; padding: 14px; background: #333; color: white; border: none; border-radius: 8px;">Or Custom Location & Comment...</button>
                 </div>
 
                 <!-- Time Picker View -->
@@ -175,6 +175,6 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js?v=31"></script>
+    <script src="/static/js/app.js?v=32"></script>
 </body>
 </html>

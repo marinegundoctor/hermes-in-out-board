@@ -274,6 +274,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const ratio = availableHeight / container.scrollHeight;
             container.style.zoom = ratio;
         }
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
     }
     
     window.addEventListener('resize', () => {
@@ -524,6 +527,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.simple-keyboard').style.display = 'none';
         }
         kioskProgressBar.style.background = 'var(--accent-yellow)';
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
     }
 
     const returnDateInput = document.getElementById('kiosk-return-date');
