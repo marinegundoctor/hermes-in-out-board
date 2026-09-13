@@ -13,6 +13,7 @@ Instead of employees clicking buttons or using specific commands, they can simpl
 - **Dockerized**: Deploy anywhere instantly using Docker Compose.
 
 ## Optional OS-Level Features & Architecture
+- **Dual-Screen Host Kiosk**: The primary host Pi runs a customized X11 Openbox session that outputs a touch-interactive UI to a smaller touchscreen display, while simultaneously running a secondary independent Chromium instance on an external monitor for dashboard/admin functionality.
 - **Wi-Fi Watchdog**: Includes a completely optional host-level script (`scripts/wifi_watchdog.sh`) for advanced setups that require resilient Wi-Fi internet failover. This script sits entirely outside of the Docker container and manages the host operating system's Wi-Fi connection directly. See [scripts/README.md](scripts/README.md) for setup details.
 - **Remote Kiosk Displays (Hermes Display Net)**: Connect secondary displays (Orange Pi, Raspberry Pi, or any single-board computer running DietPi or minimal Linux) across shops or hallways over an isolated local hotspot (`Hermes-Display-Net`). Features dynamic display auto-scaling and Tailscale bypass techniques for filtered corporate networks. See [docs/remote_display_setup.md](docs/remote_display_setup.md) for the setup guide.
 

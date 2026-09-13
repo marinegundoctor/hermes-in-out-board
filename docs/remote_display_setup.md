@@ -60,48 +60,74 @@ Reboot the device or restart the Chromium process so it loads the new font cache
 
 ---
 
-## 3. Dynamic Resolution & Fullscreen Auto-Scaling (`kiosk.sh`)
+## 3. Host Pi Dual-Screen Kiosk (`kiosk.sh`)
 
-### The Problem
-DietPi's lightweight kiosk runs under bare X11 (`xinit`) without a Window Manager (like Openbox or Matchbox). 
+Unlike the remote displays (which run a simple single-screen layout), the **Host Pi** is designed to drive two independent monitors simultaneously:
+1. **Touchscreen Interface**: A smaller interactive screen (HDMI-2) used for tapping in/out.
+2. **Dashboard/Admin Monitor**: A larger external display (HDMI-1) for broad visibility.
 
-Because there is no window manager to maximize windows, Chromium requires the `--window-size=X,Y` switch. Without it, Chromium defaults to a partial-screen window (often 960x1080 on the left half of the display). However, hardcoding a resolution breaks if you move the device between different monitors (e.g., from a 1080p desktop monitor to a 42" 4K TV in a workshop).
+To accomplish this without a full desktop environment, we utilize `openbox` and a custom `kiosk.sh` wrapper that explicitly maps touch inputs and spawns two independent browser instances.
 
-### The Solution: Hardware-Adaptive Wrapper
-Create a wrapper script that dynamically queries the connected display's active resolution via `xrandr` before Chromium launches.
-
-1. Create `/usr/local/bin/kiosk.sh`:
+### The Solution: `openbox` & `kiosk.sh` Dual-Browser Loop
+1. Ensure the required X11 tools are installed:
    ```bash
-   sudo nano /usr/local/bin/kiosk.sh
+   sudo apt-get install -y openbox unclutter xinput
    ```
 
-2. Add the following script:
+2. Overwrite `/usr/local/bin/kiosk.sh` with the dual-screen logic:
    ```bash
    #!/bin/bash
-   # Query xrandr for active display mode (marked with '*')
-   RES=$(xrandr | grep '*' | head -n 1 | awk '{print $1}')
-   RES_X=$(echo $RES | cut -d 'x' -f 1)
-   RES_Y=$(echo $RES | cut -d 'x' -f 2)
+   xset -dpms
+   xset s off
+   xset s noblank
 
-   # Fallback to standard 1080p if detection fails
-   RES_X=${RES_X:-1920}
-   RES_Y=${RES_Y:-1080}
+   # Ensure both displays are active side-by-side (Touchscreen on left, Monitor on right)
+   xrandr --output HDMI-2 --auto --pos 0x0 --primary
+   xrandr --output HDMI-1 --auto --right-of HDMI-2
 
-   # Launch Chromium with dynamic size and forward all autostart arguments ("$@")
-   exec /usr/bin/chromium --kiosk --window-size=${RES_X},${RES_Y} --window-position=0,0 "$@"
+   # Map touch input strictly to the touch screen (HDMI-2)
+   xinput map-to-output "QDtech MPI1001" HDMI-2 || true
+
+   # Start Window Manager
+   openbox-session &
+   unclutter -idle 0.5 -root &
+
+   URL="http://localhost:8000/"
+   OPTS="--kiosk --noerrdialogs --disable-infobars --disable-features=TranslateUI --disable-dev-shm-usage --no-sandbox"
+
+   sleep 2
+
+   # Determine the width of the primary screen (HDMI-2) to place the second browser
+   PRIMARY_WIDTH=$(xrandr | grep -w "connected primary" | grep -oE "[0-9]+x[0-9]+\+[0-9]+\+[0-9]+" | awk -F 'x' '{print $1}')
+   if [ -z "$PRIMARY_WIDTH" ]; then
+       PRIMARY_WIDTH=1280
+   fi
+
+   # Launch dual browsers in a loop
+   while true; do
+       # Display 1 (Touchscreen)
+       /usr/bin/chromium $OPTS --window-position=0,0 --user-data-dir=/root/.config/chromium-display1 "$URL" &
+       PID1=$!
+       
+       sleep 2
+       
+       # Display 2 (External Monitor) - Automatically adapts to the external monitor's native resolution
+       /usr/bin/chromium $OPTS --window-position=$PRIMARY_WIDTH,0 --user-data-dir=/root/.config/chromium-display2 "$URL" &
+       PID2=$!
+       
+       wait $PID1 $PID2
+       sleep 2
+   done
    ```
 
-3. Make the wrapper executable:
+3. Update DietPi's autostart script `/var/lib/dietpi/dietpi-software/installed/chromium-autostart.sh` to remove conflicting flags:
    ```bash
-   sudo chmod +x /usr/local/bin/kiosk.sh
+   # Remove CHROMIUM_OPTS to prevent DietPi from overriding the dual-screen logic
+   sed -i 's/CHROMIUM_OPTS=.*/CHROMIUM_OPTS=""/g' /var/lib/dietpi/dietpi-software/installed/chromium-autostart.sh
    ```
 
-4. Update DietPi's autostart script `/var/lib/dietpi/dietpi-software/installed/chromium-autostart.sh`:
-   Replace the executable call from `/usr/bin/chromium` to `/usr/local/bin/kiosk.sh`.
-
-Now, whenever the device boots or is plugged into a different screen, it automatically queries the EDID of the display and renders full-screen border-to-border.
-
----
+### Hot-Swapping Monitors
+Because the script dynamically queries `xrandr --auto` and determines the position based on the primary screen's width, **you can swap out the external monitor (e.g., swapping a 1080p Asus for a 2560x1440 Dell) and it will auto-size perfectly**. Simply restart the X session or reboot the Pi to trigger the script's `xrandr` hardware detection loop.
 
 ## 4. Troubleshooting Tailscale on Filtered / Corporate Networks
 
