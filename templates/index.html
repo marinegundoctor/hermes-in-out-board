@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Board - {{ settings.org_name }}</title>
-    <link rel="stylesheet" href="/static/css/styles.css?v=30">
+    <link rel="stylesheet" href="/static/css/styles.css?v=31">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -92,9 +92,14 @@
             <div id="kiosk-out-options" class="hidden">
                 <!-- Main View -->
                 <div id="kiosk-view-main">
-                    <button id="btn-just-sign-out" style="width: 100%; font-size: 1.8rem; padding: 20px; background: var(--status-out); color: white; border: none; border-radius: 8px; margin-bottom: 20px; font-weight: bold; box-shadow: 0 0 10px rgba(220, 53, 69, 0.4);">
-                        JUST SIGN ME OUT (<span id="btn-just-sign-out-timer">15</span>s)
-                    </button>
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px; width: 100%;">
+                        <button id="btn-main-cancel" style="flex: 0 0 33%; font-size: 1.8rem; padding: 20px; background: var(--status-out); color: white; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); cursor: pointer;">
+                            <i class="fa-solid fa-xmark"></i> CANCEL
+                        </button>
+                        <button id="btn-just-sign-out" style="flex: 1; font-size: 1.8rem; padding: 20px; background: var(--status-in); color: white; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); cursor: pointer;">
+                            JUST SIGN ME OUT (<span id="btn-just-sign-out-timer">15</span>s)
+                        </button>
+                    </div>
                     <p style="margin-bottom: 10px; color: var(--text-muted); font-size: 1.5rem;">Or Select Status:</p>
                     <div class="quick-btns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
                         
@@ -159,7 +164,7 @@
                 </div>
             </div>
 
-            <div class="kiosk-footer" style="margin-top: 15px; display: flex; gap: 10px;">
+            <div id="kiosk-footer" class="kiosk-footer hidden" style="margin-top: 15px; display: flex; gap: 10px;">
                 <button id="kiosk-cancel" class="btn-cancel" style="width: 30%; padding: 12px; font-size: 1.1rem; background: #333; color: white; border: none; border-radius: 8px;">Cancel</button>
                 <button id="kiosk-skip" class="btn-submit" style="width: 70%; padding: 12px; font-size: 1.1rem;">Finish & Submit</button>
             </div>
@@ -170,6 +175,6 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js?v=30"></script>
+    <script src="/static/js/app.js?v=31"></script>
 </body>
 </html>

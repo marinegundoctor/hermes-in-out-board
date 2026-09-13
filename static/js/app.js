@@ -43,6 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const kioskSkipBtn = document.getElementById('kiosk-skip');
     const kioskCancelBtn = document.getElementById('kiosk-cancel');
+    const kioskFooter = document.getElementById('kiosk-footer');
+    const btnMainCancel = document.getElementById('btn-main-cancel');
     const kioskCustomInput = document.getElementById('kiosk-custom-comment');
     const kioskProgressBar = document.getElementById('kiosk-progress');
     const btnCustomOut = document.getElementById('btn-custom-out');
@@ -323,9 +325,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             modalOpenTime = Date.now();
             
+            if (kioskFooter) kioskFooter.classList.add('hidden');
             kioskSkipBtn.classList.add('hidden');
-            kioskCancelBtn.innerText = "Cancel";
-            kioskCancelBtn.style.width = "100%";
             startKioskTimer(20000, true);
         }
     }
@@ -381,6 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         viewEl.classList.remove('hidden');
         document.getElementById(titleId).innerText = titleText;
         
+        if (kioskFooter) kioskFooter.classList.remove('hidden');
         kioskSkipBtn.classList.remove('hidden');
         kioskSkipBtn.innerText = "Confirm & Submit";
         kioskCancelBtn.innerText = "Back";
@@ -439,9 +441,8 @@ document.addEventListener('DOMContentLoaded', () => {
             kioskViewCustom.classList.add('hidden');
             kioskViewMain.classList.remove('hidden');
             
+            if (kioskFooter) kioskFooter.classList.add('hidden');
             kioskSkipBtn.classList.add('hidden');
-            kioskCancelBtn.innerText = "Cancel";
-            kioskCancelBtn.style.width = "100%";
             
             selectedQuickLocation = "";
             if (window.kioskKeyboard) {
@@ -450,6 +451,13 @@ document.addEventListener('DOMContentLoaded', () => {
             startKioskTimer(20000, true);
         }
     });
+
+    if (btnMainCancel) {
+        btnMainCancel.addEventListener('click', () => {
+            if (Date.now() - modalOpenTime < 500) return;
+            resetKiosk();
+        });
+    }
 
     const btnJustSignOut = document.getElementById('btn-just-sign-out');
     if (btnJustSignOut) {
@@ -508,6 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetKiosk() {
         if (kioskTimer) clearInterval(kioskTimer);
         kioskModal.classList.add('hidden');
+        if (kioskFooter) kioskFooter.classList.add('hidden');
         pendingUid = null;
         selectedQuickLocation = "";
         if (window.kioskKeyboard) {
