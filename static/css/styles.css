@@ -354,3 +354,18 @@ body.kiosk-mode .simple-keyboard.hg-theme-default .hg-button {
     align-items: center;
     justify-content: center;
 }
+
+/* Kiosk Date/Time Input Styling */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    transform: scale(2.5);
+    cursor: pointer;
+    margin-right: 15px;
+}
+
+input[type="date"],
+input[type="time"] {
+    font-size: 3rem !important; /* Increases the size of the native popup text */
+    padding: 25px !important;
+}
