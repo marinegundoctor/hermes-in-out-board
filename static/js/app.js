@@ -3,8 +3,11 @@ function escapeHtml(unsafe) {
     if (!unsafe) return '';
     return String(unsafe).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
+
+const isKiosk = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get("view") === "kiosk";
+let pendingUid = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-    const isKiosk = new URLSearchParams(window.location.search).get("view") === "kiosk";
     if (isKiosk) document.body.classList.add("kiosk-mode");
     const boardsContainer = document.getElementById('boards-container');
 
@@ -54,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let allUsers = [];
     let kioskTimer = null;
-    let pendingUid = null;
 
     function updateClocks() {
         const now = new Date();
@@ -70,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateClocks();
 
     async function loadData() {
+    window.loadData = loadData;
         const netDot = document.getElementById('internet-status-dot');
         const netText = document.getElementById('internet-status-text');
 
@@ -474,6 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function submitKioskData(locationVal = "--", commentVal = "--") {
+        window.submitKioskData = submitKioskData;
         if (kioskTimer) clearInterval(kioskTimer);
         
         let retComment = getReturnComment();
@@ -672,6 +676,7 @@ const QUICK_PICK_MAP = {
 };
 
 function pollSmartCard() {
+    if (!isKiosk) return;
     fetch('/api/scans/pending')
         .then(res => res.json())
         .then(data => {
@@ -707,8 +712,10 @@ function pollSmartCard() {
         }).catch(err => console.error("Card poll error", err));
 }
 
-// Poll every 1.5 seconds for snappy UI
-setInterval(pollSmartCard, 1500);
+// Poll every 600ms for snappy UI (only on kiosk)
+if (isKiosk) {
+    setInterval(pollSmartCard, 600);
+}
 
 function handleCardScanned(data) {
     activeCardId = data.card_id;
@@ -718,41 +725,74 @@ function handleCardScanned(data) {
     
     if (data.user) {
         if (data.user.status === 'out') {
-            // Clock IN
+            // Clock IN - Instant feedback & submit
+            cardState = 'SUBMITTING';
             content.innerHTML = `
-                <div style="text-align: center;">
-                    <h2 style="font-size: 3.5rem; color: var(--status-in);"><i class="fa-solid fa-check-circle"></i> Welcome Back, ${escapeHtml(data.user.name)}!</h2>
-                    <p style="font-size: 2rem; margin-top: 20px;">Setting status to <b>IN</b>...</p>
+                <div style="text-align: center; padding: 25px 10px;">
+                    <h2 style="font-size: 3.5rem; color: var(--status-in); margin-bottom: 15px;">
+                        <i class="fa-solid fa-check-circle"></i> Welcome Back, ${escapeHtml(data.user.name)}!
+                    </h2>
+                    <p style="font-size: 2.2rem; color: #fff;">Setting status to <b style="color: var(--status-in);">IN</b>...</p>
                 </div>
             `;
-            setTimeout(() => {
-                submitCardAction('IN', '', '');
-            }, 1500);
+            submitCardAction('IN', '', '', 1200);
         } else {
             // Currently IN, prompt for OUT
             cardState = 'QUICK_PICK';
             content.innerHTML = `
-                <h2 style="font-size: 3.5rem; margin-bottom: 25px;">Check OUT: ${escapeHtml(data.user.name)}</h2>
-                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 2.4rem; color: #ccc; gap: 16px;">
-                    <div><b style="color:var(--accent-yellow);">1</b> - LUNCH</div>
-                    <div><b style="color:var(--accent-yellow);">2</b> - SUPPLY</div>
-                    <div><b style="color:var(--accent-yellow);">3</b> - JFHQ</div>
-                    <div><b style="color:var(--accent-yellow);">4</b> - G6</div>
-                    <div><b style="color:var(--accent-yellow);">5</b> - LEAVE</div>
-                    <div><b style="color:var(--accent-yellow);">6</b> - TDY</div>
-                    <div><b style="color:var(--accent-yellow);">7</b> - Free Text</div>
-                    <div><b style="color:var(--accent-yellow);">0</b> - End of Day (Blank OUT)</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="font-size: 2.6rem; margin: 0;">Check OUT: <span style="color:var(--accent-yellow);">${escapeHtml(data.user.name)}</span></h2>
+                    <button onclick="cancelCard()" style="background: rgba(239, 68, 68, 0.2); border: 1px solid var(--status-out); color: var(--status-out); padding: 8px 16px; border-radius: 6px; font-size: 1.4rem; cursor: pointer; font-weight: bold;">
+                        <i class="fa-solid fa-xmark"></i> Cancel (ESC)
+                    </button>
                 </div>
-                <p style="margin-top:30px; color:#888; font-size:1.8rem;" id="quick-timeout-msg">Auto-submitting in 7 seconds...</p>
-                <p style="color:#888; font-size:1.8rem; margin-top: 10px;">Press option number, <b>Enter</b>, or wait.</p>
-                <p style="color:#888; font-size:1.8rem; margin-top: 10px;">Press <b>ESC</b> to cancel.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+                    <button class="quick-pick-tile" onclick="selectQuickPick('1')">
+                        <span class="key-badge">1</span>
+                        <span><i class="fa-solid fa-burger" style="margin-right:8px; opacity:0.8;"></i> LUNCH</span>
+                    </button>
+                    <button class="quick-pick-tile" onclick="selectQuickPick('2')">
+                        <span class="key-badge">2</span>
+                        <span><i class="fa-solid fa-boxes-stacked" style="margin-right:8px; opacity:0.8;"></i> SUPPLY</span>
+                    </button>
+                    <button class="quick-pick-tile" onclick="selectQuickPick('3')">
+                        <span class="key-badge">3</span>
+                        <span><i class="fa-solid fa-building" style="margin-right:8px; opacity:0.8;"></i> JFHQ</span>
+                    </button>
+                    <button class="quick-pick-tile" onclick="selectQuickPick('4')">
+                        <span class="key-badge">4</span>
+                        <span><i class="fa-solid fa-network-wired" style="margin-right:8px; opacity:0.8;"></i> G6</span>
+                    </button>
+                    <button class="quick-pick-tile" onclick="selectQuickPick('5')">
+                        <span class="key-badge">5</span>
+                        <span><i class="fa-solid fa-calendar-days" style="margin-right:8px; opacity:0.8;"></i> LEAVE</span>
+                    </button>
+                    <button class="quick-pick-tile" onclick="selectQuickPick('6')">
+                        <span class="key-badge">6</span>
+                        <span><i class="fa-solid fa-plane" style="margin-right:8px; opacity:0.8;"></i> TDY</span>
+                    </button>
+                    <button class="quick-pick-tile" onclick="selectQuickPick('7')">
+                        <span class="key-badge">7</span>
+                        <span><i class="fa-solid fa-pen-to-square" style="margin-right:8px; opacity:0.8;"></i> Free Text</span>
+                    </button>
+                    <button class="quick-pick-tile" onclick="selectQuickPick('0')" style="background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4);">
+                        <span class="key-badge" style="background: var(--status-out); color: white;">0</span>
+                        <span><i class="fa-solid fa-moon" style="margin-right:8px; opacity:0.8;"></i> End of Day (Blank)</span>
+                    </button>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; color: #aaa; font-size: 1.4rem; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div>Tap screen or press <b>1-7, 0, Enter</b> on keyboard</div>
+                    <div id="quick-timeout-msg" style="color: var(--accent-yellow); font-weight: bold;">Auto-submitting in 7s...</div>
+                </div>
             `;
             let timeLeft = 7;
             if (quickPickTimeout) clearInterval(quickPickTimeout);
             quickPickTimeout = setInterval(() => {
                 timeLeft--;
                 const msg = document.getElementById('quick-timeout-msg');
-                if (msg) msg.innerText = `Auto-submitting in ${timeLeft} seconds...`;
+                if (msg) msg.innerText = `Auto-submitting in ${timeLeft}s...`;
                 if (timeLeft <= 0) {
                     clearInterval(quickPickTimeout);
                     if (cardState === 'QUICK_PICK') {
@@ -769,8 +809,8 @@ function handleCardScanned(data) {
             <p style="margin-bottom: 20px; font-size: 1.8rem;">Please enter your <b>Work Email</b> to link your account, and press <b>Enter</b>:</p>
             <input type="email" id="card-email" placeholder="john.doe@example.com" style="font-size:2rem; padding: 15px; width: 100%;">
             <p style="margin-top:20px; color:#888; font-size:1.5rem;" id="new-user-timeout-msg">Auto-closing in 15 seconds...</p>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="cancelCard()">Cancel</button>
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button class="btn-cancel" onclick="cancelCard()" style="font-size: 1.6rem; padding: 12px 24px;">Cancel</button>
             </div>
         `;
         setTimeout(() => document.getElementById('card-email').focus(), 100);
@@ -784,11 +824,10 @@ function cancelCard() {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({card_id: activeCardId})
-        });
+        }).catch(() => {});
     }
     closeCardModal();
 }
-
 
 function submitRegistration(groupName) {
     fetch('/api/scans/register_new', {
@@ -798,14 +837,15 @@ function submitRegistration(groupName) {
     }).then(res => res.json()).then(data => {
         if (data.success) {
             const content = document.getElementById('smartcard-content');
-            content.innerHTML = `<h2 style="color:var(--status-in);"><i class="fa-solid fa-check"></i> Account Created & Clocked IN!</h2>`;
+            content.innerHTML = `<h2 style="color:var(--status-in); padding: 25px 0;"><i class="fa-solid fa-check"></i> Account Created & Clocked IN!</h2>`;
             setTimeout(() => { closeCardModal(); loadData(); }, 2000);
         }
     });
 }
 
 function closeCardModal() {
-    document.getElementById('smartcard-modal').classList.add('hidden');
+    const modal = document.getElementById('smartcard-modal');
+    if (modal) modal.classList.add('hidden');
     cardState = 'IDLE';
     activeCardId = null;
     clearInterval(commentTimeout);
@@ -813,8 +853,28 @@ function closeCardModal() {
     clearInterval(registerTimeout);
 }
 
-function submitCardAction(action, loc, comment) {
+function submitCardAction(action, loc, comment, displayDuration = 800) {
+    if (cardState === 'SUBMITTING' && action !== 'IN') return;
+    cardState = 'SUBMITTING';
+    clearInterval(commentTimeout);
+    clearInterval(quickPickTimeout);
+    clearInterval(registerTimeout);
+
     const submittingCardId = activeCardId;
+    if (!submittingCardId) {
+        closeCardModal();
+        return;
+    }
+
+    const content = document.getElementById('smartcard-content');
+    if (content && action !== 'IN') {
+        content.innerHTML = `
+            <div style="text-align: center; padding: 25px 10px;">
+                <h2 style="font-size: 3.5rem; color: var(--status-out);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Clocked OUT (${escapeHtml(loc || '--')})</h2>
+            </div>
+        `;
+    }
+
     fetch('/api/scans/action', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -825,15 +885,140 @@ function submitCardAction(action, loc, comment) {
             comment: comment
         })
     }).then(() => {
-        if (activeCardId === submittingCardId || activeCardId === null) {
+        setTimeout(() => {
             closeCardModal();
-        }
+            loadData();
+        }, displayDuration);
+    }).catch(err => {
+        console.error("Card action error", err);
+        closeCardModal();
         loadData();
     });
 }
 
+function selectQuickPick(key) {
+    if (cardState !== 'QUICK_PICK') return;
+    let selection = QUICK_PICK_MAP[key];
+    if (key === 'Enter') {
+        selection = QUICK_PICK_MAP['0'];
+    }
+    if (!selection) return;
+
+    currentQuickPick = selection;
+    clearInterval(quickPickTimeout);
+    
+    if (currentQuickPick.needsCustom) {
+        cardState = 'CUSTOM_LOC';
+        const content = document.getElementById('smartcard-content');
+        content.innerHTML = `
+            <h2 style="font-size: 3rem; margin-bottom: 15px;">Custom Location</h2>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px;">
+                <input type="text" id="custom-loc" placeholder="Enter Location... (Required)" style="font-size:2rem; padding: 15px; width:100%; box-sizing: border-box;" required>
+                <input type="text" id="custom-comment" placeholder="Enter Comment... (Optional)" style="font-size:2rem; padding: 15px; width:100%; box-sizing: border-box;">
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 15px;">
+                <button class="quick-card-main" onclick="submitCustomLocForm()" style="flex: 1; padding: 14px; font-size: 1.8rem; background: var(--status-in); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    <i class="fa-solid fa-check"></i> Submit (Enter)
+                </button>
+                <button class="quick-card-main" onclick="cancelCard()" style="flex: 0 0 35%; padding: 14px; font-size: 1.8rem; background: var(--status-out); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i> Cancel (ESC)
+                </button>
+            </div>
+            <p style="color: #ccc; font-size: 1.5rem; margin-top: 15px;">Press <b>Tab</b> to switch fields, <b>Enter</b> to submit.</p>
+        `;
+        setTimeout(() => document.getElementById('custom-loc').focus(), 100);
+    } else if (currentQuickPick.needsComment) {
+        cardState = 'COMMENT';
+        const content = document.getElementById('smartcard-content');
+        content.innerHTML = `
+            <h2 style="font-size: 3rem; margin-bottom: 10px;">Add Comment for ${escapeHtml(currentQuickPick.loc)}?</h2>
+            <p style="color: #ccc; margin-bottom: 15px; font-size: 1.8rem;">Tap below or press <b>Y</b> to add a comment, or press <b>Enter</b> to skip.</p>
+            <div id="comment-prompt-btns" style="display: flex; gap: 12px; margin-bottom: 15px;">
+                <button class="quick-card-main" onclick="showCommentBox()" style="flex: 1; padding: 16px; font-size: 1.8rem; background: var(--accent-blue, #2563eb); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    <i class="fa-solid fa-pen"></i> Add Comment (Y)
+                </button>
+                <button class="quick-card-main" onclick="skipComment()" style="flex: 1; padding: 16px; font-size: 1.8rem; background: #374151; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    <i class="fa-solid fa-forward"></i> Skip (Enter)
+                </button>
+            </div>
+            <div id="comment-box" class="hidden">
+                <input type="text" id="card-comment" maxlength="140" placeholder="Type comment..." style="font-size:2rem; padding: 15px; width: 100%; box-sizing: border-box; margin-bottom: 15px;">
+                <div style="display: flex; gap: 12px;">
+                    <button class="quick-card-main" onclick="submitCommentBox()" style="flex: 1; padding: 14px; font-size: 1.8rem; background: var(--status-in); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                        <i class="fa-solid fa-check"></i> Submit (Enter)
+                    </button>
+                    <button class="quick-card-main" onclick="skipComment()" style="flex: 0 0 35%; padding: 14px; font-size: 1.8rem; background: #4b5563; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                        Skip
+                    </button>
+                </div>
+            </div>
+            <p style="margin-top:20px; color:#888; font-size:1.6rem;" id="timeout-msg">Auto-submitting in 20 seconds...</p>
+        `;
+        
+        let timeLeft = 20;
+        commentTimeout = setInterval(() => {
+            timeLeft--;
+            const msg = document.getElementById('timeout-msg');
+            if (msg) msg.innerText = `Auto-submitting in ${timeLeft} seconds...`;
+            if (timeLeft <= 0) {
+                clearInterval(commentTimeout);
+                submitCardAction('OUT', currentQuickPick.loc, '--');
+            }
+        }, 1000);
+    } else {
+        submitCardAction('OUT', currentQuickPick.loc, '--');
+    }
+}
+
+function showCommentBox() {
+    clearInterval(commentTimeout);
+    const msg = document.getElementById('timeout-msg');
+    if (msg) msg.style.display = 'none';
+    const promptBtns = document.getElementById('comment-prompt-btns');
+    if (promptBtns) promptBtns.style.display = 'none';
+    const box = document.getElementById('comment-box');
+    if (box) {
+        box.classList.remove('hidden');
+        const input = document.getElementById('card-comment');
+        if (input) setTimeout(() => input.focus(), 50);
+    }
+}
+
+function skipComment() {
+    clearInterval(commentTimeout);
+    submitCardAction('OUT', currentQuickPick.loc, '--');
+}
+
+function submitCommentBox() {
+    clearInterval(commentTimeout);
+    const input = document.getElementById('card-comment');
+    submitCardAction('OUT', currentQuickPick.loc, (input && input.value.trim()) || '--');
+}
+
+function submitCustomLocForm() {
+    const locInput = document.getElementById('custom-loc');
+    const cmtInput = document.getElementById('custom-comment');
+    const loc = locInput ? locInput.value.trim() : '';
+    const cmt = cmtInput ? cmtInput.value.trim() : '';
+    if (loc) {
+        submitCardAction('OUT', loc, cmt || '--');
+    } else if (locInput) {
+        locInput.style.border = '2px solid red';
+        locInput.focus();
+    }
+}
+
+// Expose functions globally for inline onclick handlers
+window.selectQuickPick = selectQuickPick;
+window.cancelCard = cancelCard;
+window.showCommentBox = showCommentBox;
+window.skipComment = skipComment;
+window.submitCommentBox = submitCommentBox;
+window.submitCustomLocForm = submitCustomLocForm;
+
 document.addEventListener('keydown', (e) => {
-    if (cardState === 'IDLE') return;
+    if (!isKiosk) return;
+    if (cardState === 'IDLE' || cardState === 'SUBMITTING') return;
     
     if (cardState.startsWith('REGISTER_')) {
         resetRegisterTimeout();
@@ -844,84 +1029,31 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
-    if (cardState === 'QUICK_PICK') {
-        let selection = QUICK_PICK_MAP[e.key];
-        
-        // Enter defaults to 0 (End of Day)
-        if (e.key === 'Enter') {
-            selection = QUICK_PICK_MAP['0'];
-        }
+    let key = e.key;
+    if (e.code && e.code.startsWith('Numpad')) {
+        key = e.code.replace('Numpad', '');
+    }
 
-        if (selection) {
-            currentQuickPick = selection;
-            
-            if (currentQuickPick.needsCustom) {
-                cardState = 'CUSTOM_LOC';
-                const content = document.getElementById('smartcard-content');
-                content.innerHTML = `
-                    <h2 style="font-size: 3.5rem; margin-bottom: 10px;">Custom Location</h2>
-                    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
-                        <input type="text" id="custom-loc" placeholder="Enter Location... (Required)" style="font-size:2rem; padding: 15px; width:100%; box-sizing: border-box;" required>
-                        <input type="text" id="custom-comment" placeholder="Enter Comment... (Optional)" style="font-size:2rem; padding: 15px; width:100%; box-sizing: border-box;">
-                    </div>
-                    <p style="color: #ccc; font-size: 1.8rem; margin-top: 20px;">Press <b>Tab</b> to switch fields, <b>Enter</b> to submit.</p>
-                `;
-                setTimeout(() => document.getElementById('custom-loc').focus(), 100);
-            } else if (currentQuickPick.needsComment) {
-                cardState = 'COMMENT';
-                const content = document.getElementById('smartcard-content');
-                content.innerHTML = `
-                    <h2 style="font-size: 3.5rem;">Add Comment for ${currentQuickPick.loc}?</h2>
-                    <p style="color: #ccc; margin-bottom:15px; font-size: 1.8rem;">Press <b>Y</b> to type a comment, or <b>Enter</b> to skip.</p>
-                    <div id="comment-box" class="hidden">
-                        <input type="text" id="card-comment" maxlength="140" placeholder="Type comment..." style="font-size:2rem; padding: 15px; width: 100%; box-sizing: border-box;">
-                    </div>
-                    <p style="margin-top:25px; color:#888; font-size:1.8rem;" id="timeout-msg">Auto-submitting in 25 seconds...</p>
-                `;
-                
-                let timeLeft = 25;
-                commentTimeout = setInterval(() => {
-                    timeLeft--;
-                    const msg = document.getElementById('timeout-msg');
-                    if (msg) msg.innerText = `Auto-submitting in ${timeLeft} seconds...`;
-                    if (timeLeft <= 0) {
-                        clearInterval(commentTimeout);
-                        submitCardAction('OUT', currentQuickPick.loc, '--');
-                    }
-                }, 1000);
-                
-            } else {
-                // Doesn't need comment
-                submitCardAction('OUT', currentQuickPick.loc, '--');
-            }
+    if (cardState === 'QUICK_PICK') {
+        if (QUICK_PICK_MAP[key] || key === 'Enter') {
+            selectQuickPick(key);
+            return;
         }
     } else if (cardState === 'CUSTOM_LOC') {
-        if (e.key === 'Enter') {
-            const locInput = document.getElementById('custom-loc').value.trim();
-            const cmtInput = document.getElementById('custom-comment').value.trim();
-            if (locInput) {
-                submitCardAction('OUT', locInput, cmtInput || '--');
-            } else {
-                document.getElementById('custom-loc').style.border = '2px solid red';
-            }
+        if (key === 'Enter') {
+            submitCustomLocForm();
         }
     } else if (cardState === 'COMMENT') {
         const commentBox = document.getElementById('comment-box');
-        const input = document.getElementById('card-comment');
-        
-        if (commentBox.classList.contains('hidden')) {
-            if (e.key.toLowerCase() === 'y') {
-                clearInterval(commentTimeout);
-                document.getElementById('timeout-msg').style.display = 'none';
-                commentBox.classList.remove('hidden');
-                setTimeout(() => input.focus(), 10);
-            } else if (e.key === 'Enter') {
-                clearInterval(commentTimeout);
-                submitCardAction('OUT', currentQuickPick.loc, '--');
+        if (commentBox && commentBox.classList.contains('hidden')) {
+            if (key.toLowerCase() === 'y') {
+                showCommentBox();
+            } else if (key === 'Enter') {
+                skipComment();
             }
-        } else {
-            if (e.key === 'Enter') {
-                submitCardAction('OUT', currentQuickPick.loc, input.value || '--');
+        } else if (commentBox) {
+            if (key === 'Enter') {
+                submitCommentBox();
             }
         }
     } else if (cardState === 'REGISTER_EMAIL') {

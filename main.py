@@ -228,16 +228,22 @@ def get_network_status():
 # --- SMART CARD ENDPOINTS ---
 import time
 pending_card_scan = None
+last_action_timestamp = {}
 
 class PendingScan(BaseModel):
     card_id: str
 
 @app.post("/api/scans/pending")
 def set_pending_scan(scan: PendingScan):
-    global pending_card_scan
+    global pending_card_scan, last_action_timestamp
+    now = time.time()
+    # Reject scan if this card completed an action within the last 1.5 seconds (debounce bounce protection)
+    if scan.card_id in last_action_timestamp and (now - last_action_timestamp[scan.card_id]) < 1.5:
+        return {"success": False, "ignored": "cooldown"}
+
     pending_card_scan = {
         "card_id": scan.card_id,
-        "timestamp": time.time()
+        "timestamp": now
     }
     return {"success": True}
 
@@ -327,7 +333,8 @@ def kiosk_tap_action(req: TapActionRequest):
 
 @app.post("/api/scans/action")
 def resolve_card_action(req: CardActionRequest):
-    global pending_card_scan
+    global pending_card_scan, last_action_timestamp
+    last_action_timestamp[req.card_id] = time.time()
     with get_db() as conn:
         if req.action == 'IN':
             conn.execute("UPDATE users SET status = 'in', location = '--', comment = '--', last_updated = CURRENT_TIMESTAMP WHERE card_id = ?", (req.card_id,))

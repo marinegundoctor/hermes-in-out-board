@@ -104,21 +104,24 @@ To accomplish this without a full desktop environment, we utilize `openbox` and 
        PRIMARY_WIDTH=1280
    fi
 
-   # Launch dual browsers in a loop
-   while true; do
-       # Display 1 (Touchscreen)
-       /usr/bin/chromium $OPTS --window-position=0,0 --user-data-dir=/root/.config/chromium-display1 "${URL}?view=kiosk" &
-       PID1=$!
-       
-       sleep 2
-       
-       # Display 2 (External Monitor) - Automatically adapts to the external monitor's native resolution
-       /usr/bin/chromium $OPTS --window-position=$PRIMARY_WIDTH,0 --user-data-dir=/root/.config/chromium-display2 "$URL" &
-       PID2=$!
-       
-       wait $PID1 $PID2
-       sleep 2
-   done
+    # Launch dual browsers in a loop
+    while true; do
+        # Display 2 (External Monitor) - Start first so it remains in the background
+        /usr/bin/chromium $OPTS --window-position=$PRIMARY_WIDTH,0 --user-data-dir=/root/.config/chromium-display2 "$URL" &
+        PID2=$!
+        
+        sleep 2
+        
+        # Display 1 (Touchscreen Kiosk) - Start second so it receives foreground window focus
+        /usr/bin/chromium $OPTS --window-position=0,0 --user-data-dir=/root/.config/chromium-display1 "${URL}?view=kiosk" &
+        PID1=$!
+        
+        sleep 2
+        DISPLAY=:0 xdotool search --classname "chromium-display1" windowactivate 2>/dev/null || true
+        
+        wait $PID1 $PID2
+        sleep 2
+    done
    ```
 
 3. Update DietPi's autostart script `/var/lib/dietpi/dietpi-software/installed/chromium-autostart.sh` to remove conflicting flags:
