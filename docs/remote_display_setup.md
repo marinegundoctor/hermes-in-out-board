@@ -71,7 +71,7 @@ To accomplish this without a full desktop environment, we utilize `openbox` and 
 ### The Solution: `openbox` & `kiosk.sh` Dual-Browser Loop
 1. Ensure the required X11 tools are installed:
    ```bash
-   sudo apt-get install -y openbox unclutter xinput
+   sudo apt-get install -y openbox unclutter xinput xdotool
    ```
 
 2. Overwrite `/usr/local/bin/kiosk.sh` with the dual-screen logic:
@@ -124,7 +124,22 @@ To accomplish this without a full desktop environment, we utilize `openbox` and 
     done
    ```
 
-3. Update DietPi's autostart script `/var/lib/dietpi/dietpi-software/installed/chromium-autostart.sh` to remove conflicting flags:
+3. Configure Openbox window focus isolation in `/etc/xdg/openbox/rc.xml` so that background monitor windows never steal keyboard focus:
+   Add the following inside `<applications>` right before `</applications>`:
+   ```xml
+   <application class="*chromium-display2*">
+     <focus>no</focus>
+   </application>
+   <application class="*chromium-display1*">
+     <focus>yes</focus>
+   </application>
+   ```
+   Then reconfigure Openbox:
+   ```bash
+   DISPLAY=:0 openbox --reconfigure
+   ```
+
+4. Update DietPi's autostart script `/var/lib/dietpi/dietpi-software/installed/chromium-autostart.sh` to remove conflicting flags:
    ```bash
    # Remove CHROMIUM_OPTS to prevent DietPi from overriding the dual-screen logic
    sed -i 's/CHROMIUM_OPTS=.*/CHROMIUM_OPTS=""/g' /var/lib/dietpi/dietpi-software/installed/chromium-autostart.sh
