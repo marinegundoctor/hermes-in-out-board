@@ -31,6 +31,14 @@ def setup_db():
             conn.execute("ALTER TABLE users ADD COLUMN group_name TEXT DEFAULT 'Unassigned'")
         except sqlite3.OperationalError:
             pass
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE app_settings ADD COLUMN admin_pin TEXT DEFAULT '211212'")
+        except sqlite3.OperationalError:
+            pass
         conn.commit()
 
 def send_message(chat_id, text):
@@ -77,6 +85,143 @@ def process_message(chat_id, text):
     
     user = get_user_by_chat_id(chat_id)
     text_clean = text.strip()
+
+    if text_clean.lower() == "/admin_help":
+        admin_help = (
+            "🛠️ **Hermes Admin Commands**
+
+"
+            "`/users` - List all registered users (Name, Email, Status)
+"
+            "`/remove_user <email>` - Delete a user completely
+"
+            "`/remove_group <group>` - Delete a group (moves members to 'Unassigned')
+"
+            "`/set_status <email> <in/out> <location>` - Force update someone's status
+"
+            "`/broadcast <message>` - Send a Telegram message to ALL users
+"
+            "`/reset_all` - Force all users to OUT (Unknown)
+"
+            "`/admin_logout` - De-elevate back to a normal user
+
+"
+            "*Plus, you can now use natural language to change the Onboarding PIN, Org Name, and Group Order!*"
+        )
+        send_message(chat_id, admin_help)
+        return
+
+    if text_clean.lower() == "/admin_logout":
+        if not dict(user).get("is_admin"):
+            send_message(chat_id, "❌ You are not currently in Admin Mode.")
+            return
+        with get_db() as conn:
+            conn.execute("UPDATE users SET is_admin = 0 WHERE id = ?", (user["id"],))
+            conn.commit()
+        send_message(chat_id, "🔒 **Admin Mode Deactivated.** You are now a normal user.")
+        return
+
+    if text_clean.lower().startswith("/admin ") or text_clean.lower() == "/admin":
+        parts = text_clean.split(" ")
+        if len(parts) < 2:
+            send_message(chat_id, "ℹ️ To authenticate, type: `/admin <PIN>`")
+            return
+        pin = parts[1].strip()
+        with get_db() as conn:
+            correct_pin = conn.execute("SELECT admin_pin FROM app_settings WHERE id = 1").fetchone()
+            if correct_pin and pin == correct_pin["admin_pin"]:
+                conn.execute("UPDATE users SET is_admin = 1 WHERE id = ?", (user["id"],))
+                conn.commit()
+                send_message(chat_id, "🔓 **Admin Mode Activated!**
+
+You now have access to advanced commands. Type `/admin_help` to see them.")
+            else:
+                send_message(chat_id, "❌ Incorrect Admin PIN.")
+        return
+
+    if text_clean.lower() == "/users":
+        if not dict(user).get("is_admin"): return
+        with get_db() as conn:
+            users = conn.execute("SELECT name, email, status FROM users ORDER BY name").fetchall()
+        if not users:
+            send_message(chat_id, "No users found.")
+            return
+        msg = "📋 **All Registered Users**
+
+"
+        for u in users:
+            msg += f"• **{u['name']}** ({u['email']}) - Status: {u['status'].upper()}
+"
+        send_message(chat_id, msg)
+        return
+
+    if text_clean.lower().startswith("/remove_user "):
+        if not dict(user).get("is_admin"): return
+        email = text_clean.split(" ", 1)[1].strip()
+        with get_db() as conn:
+            conn.execute("DELETE FROM users WHERE email = ? COLLATE NOCASE", (email,))
+            conn.commit()
+        send_message(chat_id, f"🗑️ User `{email}` has been removed.")
+        return
+
+    if text_clean.lower().startswith("/remove_group "):
+        if not dict(user).get("is_admin"): return
+        group = text_clean.split(" ", 1)[1].strip()
+        with get_db() as conn:
+            conn.execute("DELETE FROM groups WHERE name = ? COLLATE NOCASE", (group,))
+            conn.execute("UPDATE users SET group_name = 'Unassigned' WHERE group_name = ? COLLATE NOCASE", (group,))
+            conn.commit()
+        send_message(chat_id, f"🗑️ Group `{group}` removed. Members moved to 'Unassigned'.")
+        return
+
+    if text_clean.lower().startswith("/set_status "):
+        if not dict(user).get("is_admin"): return
+        parts = text_clean.split(" ")
+        if len(parts) < 3:
+            send_message(chat_id, "ℹ️ Usage: `/set_status <email> <in/out> <location>`")
+            return
+        email = parts[1].strip()
+        status = parts[2].strip().lower()
+        if status not in ["in", "out"]:
+            send_message(chat_id, "❌ Status must be 'in' or 'out'.")
+            return
+        loc = " ".join(parts[3:]) if len(parts) > 3 else ("--" if status == "in" else "Unknown")
+        with get_db() as conn:
+            target = conn.execute("SELECT id, name FROM users WHERE email = ? COLLATE NOCASE", (email,)).fetchone()
+            if target:
+                conn.execute("UPDATE users SET status = ?, location = ?, comment = '--', last_updated = CURRENT_TIMESTAMP WHERE id = ?", (status, loc, target["id"]))
+                conn.commit()
+                send_message(chat_id, f"✅ Updated **{target['name']}** to {status.upper()} ({loc}).")
+            else:
+                send_message(chat_id, f"❌ No user found with email: {email}")
+        return
+
+    if text_clean.lower().startswith("/broadcast "):
+        if not dict(user).get("is_admin"): return
+        msg = text_clean.split(" ", 1)[1].strip()
+        b_msg = f"📢 **BROADCAST FROM ADMIN ({user['name']})**
+
+{msg}"
+        with get_db() as conn:
+            chats = conn.execute("SELECT telegram_chat_id FROM users WHERE telegram_chat_id IS NOT NULL").fetchall()
+        count = 0
+        for c in chats:
+            try:
+                send_message(c["telegram_chat_id"], b_msg)
+                count += 1
+            except: pass
+        send_message(chat_id, f"✅ Broadcast sent to {count} users.")
+        return
+
+    if text_clean.lower() == "/reset_all":
+        if not dict(user).get("is_admin"): return
+        with get_db() as conn:
+            conn.execute("UPDATE users SET status = 'out', location = 'Unknown', comment = '--', last_updated = CURRENT_TIMESTAMP")
+            conn.commit()
+        send_message(chat_id, "✅ All users have been reset to OUT (Unknown).")
+        return
+
+
     
     # Handle Group Confirmation
     if chat_id in group_confirm_state:
@@ -237,7 +382,7 @@ def process_message(chat_id, text):
     # Removed to save network roundtrip
     
     try:
-        parsed_data = parse_status_message(text, is_admin=user.get("is_admin", False))
+        parsed_data = parse_status_message(text, is_admin=dict(user).get("is_admin", False))
         action = parsed_data.get("action", "update_status")
         
         if action == "help":
@@ -276,7 +421,7 @@ def process_message(chat_id, text):
             return
 
         if action == "admin_update_status":
-            if not user.get("is_admin"):
+            if not dict(user).get("is_admin", False):
                 send_message(chat_id, "❌ You must be an Admin to perform this action. Type `/admin <PIN>` to authenticate.")
                 return
             target_user_name = parsed_data.get("target_user")

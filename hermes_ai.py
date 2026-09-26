@@ -16,10 +16,8 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
     """
     
 
-    admin_instructions = ""
-    if is_admin:
-        admin_instructions = """
-       - ADMIN ABILITY: The user is an administrator. If they ask to update ANOTHER person's status (e.g. "Set Dixon to out", "Mark Lowery as in", "Update John to out at dental"), set "action" to "admin_update_status", extract the target person's name into "target_user", and extract their "status", "location", and "comment" as normal."""
+    admin_instructions = """
+       - ADMIN ABILITY: If the user asks to update ANOTHER person's status (e.g. "Set Dixon to out", "Mark Lowery as in", "Update John to out at dental"), set "action" to "admin_update_status", extract the target person's name into "target_user", and extract their "status", "location", and "comment" as normal. DO THIS EVEN IF THEY ARE NOT AN ADMIN (the system will handle rejecting unauthorized users)."""
 
     system_prompt = """
     You are the natural language processor for a professional military office In/Out board.
@@ -115,10 +113,8 @@ def parse_onboarding_name(user_message: str) -> dict:
     Extracts rank and name from user string.
     """
 
-    admin_instructions = ""
-    if is_admin:
-        admin_instructions = """
-       - ADMIN ABILITY: The user is an administrator. If they ask to update ANOTHER person's status (e.g. "Set Dixon to out", "Mark Lowery as in", "Update John to out at dental"), set "action" to "admin_update_status", extract the target person's name into "target_user", and extract their "status", "location", and "comment" as normal."""
+    admin_instructions = """
+       - ADMIN ABILITY: If the user asks to update ANOTHER person's status (e.g. "Set Dixon to out", "Mark Lowery as in", "Update John to out at dental"), set "action" to "admin_update_status", extract the target person's name into "target_user", and extract their "status", "location", and "comment" as normal. DO THIS EVEN IF THEY ARE NOT AN ADMIN (the system will handle rejecting unauthorized users)."""
 
     system_prompt = """
     You extract military ranks and names from a user's input.
