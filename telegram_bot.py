@@ -237,7 +237,7 @@ def process_message(chat_id, text):
     # Removed to save network roundtrip
     
     try:
-        parsed_data = parse_status_message(text)
+        parsed_data = parse_status_message(text, is_admin=user.get("is_admin", False))
         action = parsed_data.get("action", "update_status")
         
         if action == "help":
@@ -273,6 +273,31 @@ def process_message(chat_id, text):
                     conn.execute("UPDATE users SET group_name = ? WHERE id = ?", (target_group, user["id"]))
                     conn.commit()
                 send_message(chat_id, f"✅ Moved you to **{target_group}**.")
+            return
+
+        if action == "admin_update_status":
+            if not user.get("is_admin"):
+                send_message(chat_id, "❌ You must be an Admin to perform this action. Type `/admin <PIN>` to authenticate.")
+                return
+            target_user_name = parsed_data.get("target_user")
+            if not target_user_name:
+                send_message(chat_id, "❌ I didn't catch the name of the user to update.")
+                return
+            
+            target_status = parsed_data.get("status", "out").lower()
+            if target_status not in ["in", "out"]:
+                target_status = "out"
+            target_loc = parsed_data.get("location", "--")
+            target_comment = parsed_data.get("comment", "--")
+            
+            with get_db() as conn:
+                target = conn.execute("SELECT id, name FROM users WHERE name LIKE ? COLLATE NOCASE", (f"%{target_user_name}%",)).fetchone()
+                if target:
+                    conn.execute("UPDATE users SET status = ?, location = ?, comment = ?, last_updated = CURRENT_TIMESTAMP WHERE id = ?", (target_status, target_loc, target_comment, target["id"]))
+                    conn.commit()
+                    send_message(chat_id, f"✅ Updated **{target['name']}** to {target_status.upper()} ({target_loc}).")
+                else:
+                    send_message(chat_id, f"❌ No user found matching the name: {target_user_name}")
             return
 
         if action == "update_announcement":

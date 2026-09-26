@@ -9,12 +9,18 @@ client = OpenAI(
     base_url="https://api.deepinfra.com/v1/openai"
 )
 
-def parse_status_message(user_message: str) -> dict:
+def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
     """
     Passes the user's natural language message to Llama 3.1 and asks it to 
     extract the status, location, and comment in a strict JSON format.
     """
     
+
+    admin_instructions = ""
+    if is_admin:
+        admin_instructions = """
+       - ADMIN ABILITY: The user is an administrator. If they ask to update ANOTHER person's status (e.g. "Set Dixon to out", "Mark Lowery as in", "Update John to out at dental"), set "action" to "admin_update_status", extract the target person's name into "target_user", and extract their "status", "location", and "comment" as normal."""
+
     system_prompt = """
     You are the natural language processor for a professional military office In/Out board.
     An employee will send you a text message about their current status.
@@ -31,6 +37,7 @@ def parse_status_message(user_message: str) -> dict:
        - If they ask to change the unit name, organization name, or company name, set "action" to "update_org_name" and extract the new name into "target_group".
        - If they ask to set, adjust, or change the group order (e.g., "Set group order to Command, Admin, Operations"), set "action" to "update_group_order" and extract the list of groups as a JSON array into "target_groups".
        - Otherwise, set "action" to "update_status".
+""" + admin_instructions + """
     2. Status must be "in" or "out". 
        - ONLY mark "in" if they explicitly state they are back at their desk, "in the office", "returned", or "arriving" at home base.
        - If they are moving between locations, traveling, "heading to X", "going to Y", or at an appointment, mark as "out".
@@ -50,7 +57,8 @@ def parse_status_message(user_message: str) -> dict:
     
     Respond ONLY with a valid JSON object matching this schema, with no markdown formatting or extra text:
     {
-        "action": "update_status", "change_group", "update_announcement", "update_pin", "update_org_name", "update_group_order", "help", or "ignore", 
+        "action": "update_status", "admin_update_status", "change_group", "update_announcement", "update_pin", "update_org_name", "update_group_order", "help", or "ignore", 
+        "target_user": "string" (or null),
         "target_group": "string" (or null) (Use this field for the new PIN if action is update_pin),
         "target_groups": ["string1", "string2"] (only used for update_group_order),
         "announcement_title": "string" (or null),
@@ -63,7 +71,7 @@ def parse_status_message(user_message: str) -> dict:
 
     try:
         response = client.chat.completions.create(
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
@@ -106,6 +114,12 @@ def parse_onboarding_name(user_message: str) -> dict:
     """
     Extracts rank and name from user string.
     """
+
+    admin_instructions = ""
+    if is_admin:
+        admin_instructions = """
+       - ADMIN ABILITY: The user is an administrator. If they ask to update ANOTHER person's status (e.g. "Set Dixon to out", "Mark Lowery as in", "Update John to out at dental"), set "action" to "admin_update_status", extract the target person's name into "target_user", and extract their "status", "location", and "comment" as normal."""
+
     system_prompt = """
     You extract military ranks and names from a user's input.
     If they provide a rank, put it in 'rank'. Put the rest of their name in 'name'.
@@ -118,7 +132,7 @@ def parse_onboarding_name(user_message: str) -> dict:
     """
     try:
         response = client.chat.completions.create(
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
