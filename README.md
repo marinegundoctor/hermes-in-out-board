@@ -1,23 +1,30 @@
-# Hermes In/Out Board (Dockerized)
+# Hermes In/Out Board (v1.2.0)
+
+![Version](https://img.shields.io/badge/version-v1.2.0-blue.svg)
+![Docker](https://img.shields.io/badge/docker-ready-green.svg)
+![Llama 3.1](https://img.shields.io/badge/AI-Meta%_Llama_3.1_70B-purple.svg)
 
 A modern, AI-powered digital In/Out board designed for professional environments (offices, military units, etc.). It features a clean web-based Kiosk display and uses a Telegram Bot ("Hermes") to process natural language status updates.
 
-Instead of employees clicking buttons or using specific commands, they can simply message the bot conversationally (e.g., "Running late due to traffic, I'll be in around 0930"). The bot leverages Meta Llama 3.1 8B Instruct Turbo (via DeepInfra) which is extremely low cost (around $0.02 per 1M tokens in, $0.04 per 1M tokens out) to extract their status, location, and a professional comment, instantly updating the Kiosk display.
+Instead of employees clicking buttons or using specific commands, they can simply message the bot conversationally (e.g., "Running late due to traffic, I'll be in around 0930") or use the convenient **Interactive Telegram Buttons**. The bot leverages Meta Llama 3.1 70B Instruct Turbo (via DeepInfra) to extract their status, location, and a professional comment, instantly updating the Kiosk display.
+
+## 🚀 New Features in v1.2.0
+- **Interactive Telegram Buttons**: Instantly update your status directly from Telegram with persistent inline buttons (`[ IN ]`, `[ OUT - Lunch ]`, `[ OUT - Meeting ]`).
+- **End-of-Day (EOD) Auto-Checkout**: A cron job runs every evening at 1800, automatically clearing the board and signing out anyone still checked "IN".
+- **Roll Call / Accountability Report**: Admins can run `/rollcall` to receive a real-time, timestamped accountability report of who is IN/OUT by group (perfect for emergencies or daily formations).
+- **Natural Language Admin Features**: Admins can now manage other people's statuses conversationally (e.g., "Set Dixon to out at the dentist"), update group orders, or modify organization names seamlessly.
+- **Secure Admin Timeouts**: Elevated admin sessions automatically revert to standard user privileges after 15 minutes of inactivity for enhanced security.
 
 ## Features
-- **Smart Card / CAC / Badge Integration**: Employees can simply tap their ID badge or CAC to check in/out instantly at the Kiosk. Supports HID OMNIKEY 5422, ACR122U, and all standard PC/SC CCID compliant readers with sub-second debounce protection. See [docs/smartcard_setup.md](docs/smartcard_setup.md).
-- **Touchscreen & Keyboard Dual Usability**: The kiosk interface supports both physical keyboards (Keychron K1 Pro / standard USB keyboards with keys 1-7, 0, Enter, ESC) AND direct capacitive touch controls with large interactive tiles, on-screen keyboard (`simple-keyboard`), and touch-optimized date/time pickers (`flatpickr`).
-- **Real-time Dual-Screen Kiosk Display**: A sleek, auto-updating web dashboard. The host Raspberry Pi simultaneously drives an interactive touch display for employee check-ins and an external display (e.g. facing an office window) with Openbox window focus isolation.
-- **Backend Internet Watchdog**: The Python backend continuously monitors upstream connectivity and roundtrip latency using captive portal probes, driving live connection health indicators (Online, Degraded, Offline) uniformly across all connected screens.
-- **Telegram Integration**: Employees manage their status conversationally through a secure Telegram bot ("Hermes") powered by Meta Llama 3.1 8B Instruct Turbo.
-- **Zero-Touch Setup**: Backend initializes dynamically. The web dashboard guides the administrator through initial configuration.
-- **Dockerized**: Deploy anywhere instantly using Docker Compose.
+- **Smart Card / CAC / Badge Integration**: Employees can simply tap their ID badge or CAC to check in/out instantly at the Kiosk. Supports HID OMNIKEY 5422, ACR122U, and all standard PC/SC CCID compliant readers.
+- **Touchscreen & Keyboard Dual Usability**: The kiosk interface supports both physical keyboards AND direct capacitive touch controls with large interactive tiles.
+- **Real-time Dual-Screen Kiosk Display**: A sleek, auto-updating web dashboard. The host Raspberry Pi simultaneously drives an interactive touch display for employee check-ins and an external display for public viewing.
+- **Backend Internet Watchdog**: The Python backend continuously monitors upstream connectivity and roundtrip latency using captive portal probes.
+- **Telegram Integration**: Employees manage their status conversationally through a secure Telegram bot ("Hermes").
 
 ## Optional OS-Level Features & Architecture
-- **Smart Card Reader Service**: A lightweight Python service running on the host OS (`card_reader.py`) that monitors smart card insertions via `pyscard`, reads ISO 14443-A UIDs, routes status updates to the local API, and guarantees X11 kiosk window focus. See [docs/smartcard_setup.md](docs/smartcard_setup.md) for complete hardware and systemd setup.
-- **Dual-Screen Host Kiosk**: The primary host Pi runs a customized X11 Openbox session that outputs the touch-interactive kiosk UI (`?view=kiosk`) to a 10" touchscreen display while running an independent Chromium instance on an external monitor for public viewing. Includes window rules to prevent the public display from stealing keyboard focus. See [docs/remote_display_setup.md](docs/remote_display_setup.md).
-- **Wi-Fi Watchdog**: Includes a host-level script (`scripts/wifi_watchdog.sh`) for advanced setups requiring resilient Wi-Fi internet failover (e.g. Guest Wi-Fi with MiFi backup). See [scripts/README.md](scripts/README.md).
-- **Remote Kiosk Displays (Hermes Display Net)**: Connect secondary displays (Orange Pi, Raspberry Pi, or any single-board computer running DietPi or minimal Linux) across shops or hallways over an isolated local hotspot (`Hermes-Display-Net`). Features dynamic display auto-scaling and Tailscale bypass techniques for filtered corporate networks. See [docs/remote_display_setup.md](docs/remote_display_setup.md).
+- **Smart Card Reader Service**: A lightweight Python service running on the host OS (`card_reader.py`) that monitors smart card insertions via `pyscard`, reads ISO 14443-A UIDs, routes status updates to the local API. See [docs/smartcard_setup.md](docs/smartcard_setup.md).
+- **Remote Kiosk Displays (Hermes Display Net)**: Connect secondary displays across shops or hallways over an isolated local hotspot. See [docs/remote_display_setup.md](docs/remote_display_setup.md).
 
 ## Prerequisites
 - Docker and Docker Compose
@@ -43,7 +50,7 @@ Instead of employees clicking buttons or using specific commands, they can simpl
 3. **Start the Application:**
    Run the following command to build the image and start both the API and the Telegram Bot in the background:
    ```bash
-   docker-compose up -d
+   docker-compose up -d --build
    ```
 
 4. **Access the Dashboard:**
