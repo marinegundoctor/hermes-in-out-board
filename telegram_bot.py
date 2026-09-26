@@ -39,11 +39,25 @@ def setup_db():
             conn.execute("ALTER TABLE app_settings ADD COLUMN admin_pin TEXT DEFAULT '211212'")
         except sqlite3.OperationalError:
             pass
+        
+        # Clear all admin sessions on restart
+        conn.execute("UPDATE users SET is_admin = 0")
         conn.commit()
 
-def send_message(chat_id, text):
+def send_message(chat_id, text, use_keyboard=True):
     url = f"{BASE_URL}/sendMessage"
-    requests.post(url, json={"chat_id": chat_id, "text": text})
+    payload = {"chat_id": chat_id, "text": text}
+    if use_keyboard:
+        payload["reply_markup"] = {
+            "keyboard": [
+                [{"text": "IN"}, {"text": "OUT - EOD"}],
+                [{"text": "OUT - Lunch"}, {"text": "OUT - Meeting"}],
+                [{"text": "/admin_help"}, {"text": "/rollcall"}]
+            ],
+            "resize_keyboard": True,
+            "is_persistent": True
+        }
+    requests.post(url, json=payload)
 
 def get_user_by_chat_id(chat_id):
     with get_db() as conn:
@@ -54,8 +68,21 @@ def get_all_groups():
         rows = conn.execute("SELECT DISTINCT group_name FROM users WHERE group_name IS NOT NULL").fetchall()
         return [r[0] for r in rows]
 
+
+last_eod_date = None
+admin_timeouts = {}
+
+def run_eod_reset():
+    with get_db() as conn:
+        conn.execute("UPDATE users SET status = 'out', location = '--', comment = 'EOD Auto-checkout', last_updated = CURRENT_TIMESTAMP WHERE status = 'in'")
+        conn.commit()
+    print("EOD Auto-checkout ran successfully.")
+
 def check_timeouts():
+    global last_eod_date
     now = time.time()
+    
+    # 1. Comment Timeouts
     to_remove = []
     for chat_id, state in waiting_for_comment.items():
         if now - state["timestamp"] > 300:
@@ -63,6 +90,27 @@ def check_timeouts():
             to_remove.append(chat_id)
     for chat_id in to_remove:
         del waiting_for_comment[chat_id]
+        
+    # 2. Admin Timeouts
+    expired_admins = []
+    for chat_id, expire_time in admin_timeouts.items():
+        if now > expire_time:
+            expired_admins.append(chat_id)
+    for chat_id in expired_admins:
+        user = get_user_by_chat_id(chat_id)
+        if user and dict(user).get("is_admin"):
+            with get_db() as conn:
+                conn.execute("UPDATE users SET is_admin = 0 WHERE id = ?", (user["id"],))
+                conn.commit()
+            send_message(chat_id, "🔒 **Admin Session Expired.** You have been reverted to a normal user. (15-minute timeout)")
+        del admin_timeouts[chat_id]
+        
+    # 3. EOD Reset
+    local_time = time.localtime(now)
+    current_date = f"{local_time.tm_year}-{local_time.tm_mon}-{local_time.tm_mday}"
+    if local_time.tm_hour >= 18 and last_eod_date != current_date:
+        run_eod_reset()
+        last_eod_date = current_date
 
 def create_account(chat_id, email, name, group_name, rank="", sort_weight=None):
     if sort_weight is None or sort_weight == 50:
@@ -85,6 +133,48 @@ def process_message(chat_id, text):
     
     user = get_user_by_chat_id(chat_id)
     text_clean = text.strip()
+
+    if text_clean.lower() == "/cancel":
+        if chat_id in onboarding_state:
+            del onboarding_state[chat_id]
+        if chat_id in group_confirm_state:
+            del group_confirm_state[chat_id]
+        if chat_id in waiting_for_comment:
+            del waiting_for_comment[chat_id]
+        send_message(chat_id, "✅ Action cancelled. I'm listening for status updates.")
+        return
+
+    if text_clean.lower() == "/rollcall":
+        if not dict(user).get("is_admin"): 
+            send_message(chat_id, "❌ You must be an Admin to perform this action.")
+            return
+        with get_db() as conn:
+            users = conn.execute("SELECT name, status, location, datetime(last_updated, 'localtime') as local_time, group_name FROM users ORDER BY group_name, name").fetchall()
+        if not users:
+            send_message(chat_id, "No users found.")
+            return
+        
+        from collections import defaultdict
+        groups = defaultdict(list)
+        for u in users:
+            groups[u['group_name']].append(dict(u))
+            
+        msg = "📋 **Roll Call / Accountability Report**\n\n"
+        for group_name, members in groups.items():
+            msg += f"**{group_name}**\n"
+            for u in members:
+                time_str = u['local_time']
+                if time_str:
+                    parts = time_str.split(" ")
+                    date_parts = parts[0].split("-")
+                    time_parts = parts[1].split(":")
+                    time_str = f"{date_parts[1]}/{date_parts[2]} {time_parts[0]}:{time_parts[1]}"
+                loc = f" ({u['location']})" if u['status'] == 'out' else ""
+                msg += f"• {u['name']}: {u['status'].upper()}{loc} _[{time_str}]_\n"
+            msg += "\n"
+        send_message(chat_id, msg)
+        return
+
 
     if text_clean.lower() == "/admin_help":
         admin_help = (
@@ -121,8 +211,9 @@ def process_message(chat_id, text):
             correct_pin = conn.execute("SELECT admin_pin FROM app_settings WHERE id = 1").fetchone()
             if correct_pin and pin == correct_pin["admin_pin"]:
                 conn.execute("UPDATE users SET is_admin = 1 WHERE id = ?", (user["id"],))
+                admin_timeouts[chat_id] = time.time() + 900
                 conn.commit()
-                send_message(chat_id, "🔓 **Admin Mode Activated!**\n\nYou now have access to advanced commands. Type `/admin_help` to see them.")
+                send_message(chat_id, "🔓 **Admin Mode Activated!** (15-minute timeout)\n\nYou now have access to advanced commands. Type `/admin_help` to see them.")
             else:
                 send_message(chat_id, "❌ Incorrect Admin PIN.")
         return
@@ -365,7 +456,15 @@ def process_message(chat_id, text):
     # Removed to save network roundtrip
     
     try:
-        parsed_data = parse_status_message(text, is_admin=dict(user).get("is_admin", False))
+        if text_clean in ["IN", "OUT - EOD", "OUT - Lunch", "OUT - Meeting"]:
+            action = "update_status"
+            if text_clean == "IN":
+                parsed_data = {"action": "update_status", "status": "in", "location": "--", "comment": "--"}
+            else:
+                loc = text_clean.split("-")[1].strip()
+                parsed_data = {"action": "update_status", "status": "out", "location": loc, "comment": "--"}
+        else:
+            parsed_data = parse_status_message(text, is_admin=dict(user).get("is_admin", False))
         action = parsed_data.get("action", "update_status")
         
         if action == "help":
@@ -397,6 +496,7 @@ def process_message(chat_id, text):
                     "**Changing your Profile (Rank, Name, Group, Email):**\n"
                     "If you get promoted, married, or switch groups, just type `/start` at any time to re-enter your information.\n\n"
                     "**Other Commands:**\n"
+                    "`/cancel` - Exit onboarding or any confirmation prompt\n"
                     "- \"Move me to the S6 group\"\n"
                     "- \"Update the announcement: Title... Body...\""
                 )
