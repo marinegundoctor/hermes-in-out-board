@@ -369,19 +369,37 @@ def process_message(chat_id, text):
         action = parsed_data.get("action", "update_status")
         
         if action == "help":
-            help_msg = (
-                "🤖 **Hermes Bot Help**\n\n"
-                "**Updating your status:**\n"
-                "Just message me naturally! Examples:\n"
-                "- \"Heading to lunch\"\n"
-                "- \"I'm at the dentist, back at 1400\"\n"
-                "- \"Back in the office\"\n\n"
-                "**Changing your Profile (Rank, Name, Group, Email):**\n"
-                "If you get promoted, married, or switch groups, just type `/start` at any time to re-enter your information.\n\n"
-                "**Other Commands:**\n"
-                "- \"Move me to the S6 group\"\n"
-                "- \"Update the announcement: Title... Body...\""
-            )
+            if dict(user).get("is_admin"):
+                help_msg = (
+                    "🤖 **Hermes Admin Help**\n\n"
+                    "**Updating your status:**\n"
+                    "Just message me naturally! (e.g. \"Heading to lunch\")\n\n"
+                    "**Updating OTHER people's status:**\n"
+                    "Since you are an admin, you can say: \"Set Dixon to out at the dentist\" or \"Mark Langner as IN\".\n\n"
+                    "**Admin Commands:**\n"
+                    "`/users` - List all registered users\n"
+                    "`/remove_user <email>` - Delete a user\n"
+                    "`/remove_group <group>` - Delete a group\n"
+                    "`/set_status <email> <in/out> <location>` - Force update someone's status\n"
+                    "`/broadcast <message>` - Send a Telegram message to ALL users\n"
+                    "`/reset_all` - Force all users to OUT (Unknown)\n"
+                    "`/admin_logout` - De-elevate back to a normal user\n\n"
+                    "*You can also use natural language to change the Onboarding PIN, Org Name, and Group Order!*"
+                )
+            else:
+                help_msg = (
+                    "🤖 **Hermes Bot Help**\n\n"
+                    "**Updating your status:**\n"
+                    "Just message me naturally! Examples:\n"
+                    "- \"Heading to lunch\"\n"
+                    "- \"I'm at the dentist, back at 1400\"\n"
+                    "- \"Back in the office\"\n\n"
+                    "**Changing your Profile (Rank, Name, Group, Email):**\n"
+                    "If you get promoted, married, or switch groups, just type `/start` at any time to re-enter your information.\n\n"
+                    "**Other Commands:**\n"
+                    "- \"Move me to the S6 group\"\n"
+                    "- \"Update the announcement: Title... Body...\""
+                )
             send_message(chat_id, help_msg)
             return
 
