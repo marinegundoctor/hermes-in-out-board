@@ -88,24 +88,14 @@ def process_message(chat_id, text):
 
     if text_clean.lower() == "/admin_help":
         admin_help = (
-            "🛠️ **Hermes Admin Commands**
-
-"
-            "`/users` - List all registered users (Name, Email, Status)
-"
-            "`/remove_user <email>` - Delete a user completely
-"
-            "`/remove_group <group>` - Delete a group (moves members to 'Unassigned')
-"
-            "`/set_status <email> <in/out> <location>` - Force update someone's status
-"
-            "`/broadcast <message>` - Send a Telegram message to ALL users
-"
-            "`/reset_all` - Force all users to OUT (Unknown)
-"
-            "`/admin_logout` - De-elevate back to a normal user
-
-"
+            "🛠️ **Hermes Admin Commands**\n\n"
+            "`/users` - List all registered users (Name, Email, Status)\n"
+            "`/remove_user <email>` - Delete a user completely\n"
+            "`/remove_group <group>` - Delete a group (moves members to 'Unassigned')\n"
+            "`/set_status <email> <in/out> <location>` - Force update someone's status\n"
+            "`/broadcast <message>` - Send a Telegram message to ALL users\n"
+            "`/reset_all` - Force all users to OUT (Unknown)\n"
+            "`/admin_logout` - De-elevate back to a normal user\n\n"
             "*Plus, you can now use natural language to change the Onboarding PIN, Org Name, and Group Order!*"
         )
         send_message(chat_id, admin_help)
@@ -132,9 +122,7 @@ def process_message(chat_id, text):
             if correct_pin and pin == correct_pin["admin_pin"]:
                 conn.execute("UPDATE users SET is_admin = 1 WHERE id = ?", (user["id"],))
                 conn.commit()
-                send_message(chat_id, "🔓 **Admin Mode Activated!**
-
-You now have access to advanced commands. Type `/admin_help` to see them.")
+                send_message(chat_id, "🔓 **Admin Mode Activated!**\n\nYou now have access to advanced commands. Type `/admin_help` to see them.")
             else:
                 send_message(chat_id, "❌ Incorrect Admin PIN.")
         return
@@ -146,12 +134,9 @@ You now have access to advanced commands. Type `/admin_help` to see them.")
         if not users:
             send_message(chat_id, "No users found.")
             return
-        msg = "📋 **All Registered Users**
-
-"
+        msg = "📋 **All Registered Users**\n\n"
         for u in users:
-            msg += f"• **{u['name']}** ({u['email']}) - Status: {u['status'].upper()}
-"
+            msg += f"• **{u['name']}** ({u['email']}) - Status: {u['status'].upper()}\n"
         send_message(chat_id, msg)
         return
 
@@ -199,9 +184,7 @@ You now have access to advanced commands. Type `/admin_help` to see them.")
     if text_clean.lower().startswith("/broadcast "):
         if not dict(user).get("is_admin"): return
         msg = text_clean.split(" ", 1)[1].strip()
-        b_msg = f"📢 **BROADCAST FROM ADMIN ({user['name']})**
-
-{msg}"
+        b_msg = f"📢 **BROADCAST FROM ADMIN ({user['name']})**\n\n{msg}"
         with get_db() as conn:
             chats = conn.execute("SELECT telegram_chat_id FROM users WHERE telegram_chat_id IS NOT NULL").fetchall()
         count = 0
