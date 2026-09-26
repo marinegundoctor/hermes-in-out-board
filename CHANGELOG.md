@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-09-26
+
+### Added
+- **Manager Role**: Introduced a permanent Manager role that sits between normal users and Admins. Managers can update the board announcement, alter other users' statuses and groups, and send broadcasts.
+- **Dynamic Keyboards**: Telegram buttons now dynamically update based on the user's role (User, Manager, or Admin) so normal users only see relevant buttons.
+- **Role Management Commands**: Admins can promote users via `/promote <email> <manager/user>`, and Managers can explicitly set a user's group via `/set_group <email> <group>`.
+
 ## [1.2.0] - 2026-09-26
 
 ### Added

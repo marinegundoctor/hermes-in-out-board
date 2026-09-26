@@ -1,6 +1,6 @@
-# Hermes In/Out Board (v1.2.0)
+# Hermes In/Out Board (v1.2.1)
 
-![Version](https://img.shields.io/badge/version-v1.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.2.1-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-green.svg)
 ![Llama 3.1](https://img.shields.io/badge/AI-Meta%_Llama_3.1_70B-purple.svg)
 
@@ -8,12 +8,12 @@ A modern, AI-powered digital In/Out board designed for professional environments
 
 Instead of employees clicking buttons or using specific commands, they can simply message the bot conversationally (e.g., "Running late due to traffic, I'll be in around 0930") or use the convenient **Interactive Telegram Buttons**. The bot leverages Meta Llama 3.1 70B Instruct Turbo (via DeepInfra) to extract their status, location, and a professional comment, instantly updating the Kiosk display.
 
-## 🚀 New Features in v1.2.0
+## 🚀 New Features in v1.2.1
 - **Interactive Telegram Buttons**: Instantly update your status directly from Telegram with persistent inline buttons (`[ IN ]`, `[ OUT - Lunch ]`, `[ OUT - Meeting ]`).
 - **End-of-Day (EOD) Auto-Checkout**: A cron job runs every evening at 1800, automatically clearing the board and signing out anyone still checked "IN".
 - **Roll Call / Accountability Report**: Admins can run `/rollcall` to receive a real-time, timestamped accountability report of who is IN/OUT by group (perfect for emergencies or daily formations).
-- **Natural Language Admin Features**: Admins can now manage other people's statuses conversationally (e.g., "Set Dixon to out at the dentist"), update group orders, or modify organization names seamlessly.
-- **Secure Admin Timeouts**: Elevated admin sessions automatically revert to standard user privileges after 15 minutes of inactivity for enhanced security.
+- **Natural Language Admin Features**: Managers and Admins can now manage other people's statuses conversationally (e.g., "Set Dixon to out at the dentist"), update group orders, or modify organization names seamlessly.
+- **Manager Roles & Secure Admin Timeouts**: Elevated admin sessions automatically revert to standard user privileges after 15 minutes of inactivity for enhanced security.
 
 ## Features
 - **Smart Card / CAC / Badge Integration**: Employees can simply tap their ID badge or CAC to check in/out instantly at the Kiosk. Supports HID OMNIKEY 5422, ACR122U, and all standard PC/SC CCID compliant readers.

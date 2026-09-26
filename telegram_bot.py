@@ -36,6 +36,10 @@ def setup_db():
         except sqlite3.OperationalError:
             pass
         try:
+            conn.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'")
+        except sqlite3.OperationalError:
+            pass
+        try:
             conn.execute("ALTER TABLE app_settings ADD COLUMN admin_pin TEXT DEFAULT '211212'")
         except sqlite3.OperationalError:
             pass
@@ -51,12 +55,19 @@ def send_message(chat_id, text, use_keyboard=True):
         user = get_user_by_chat_id(chat_id)
         is_admin = dict(user).get("is_admin", False) if user else False
         
+        role = dict(user).get("role", "user") if user else "user"
         if is_admin:
             kb = [
                 [{"text": "IN"}, {"text": "OUT - EOD"}],
                 [{"text": "OUT - Lunch"}, {"text": "OUT - Meeting"}],
                 [{"text": "/rollcall"}, {"text": "/users"}],
                 [{"text": "/admin_help"}, {"text": "/admin_logout"}]
+            ]
+        elif role == "manager":
+            kb = [
+                [{"text": "IN"}, {"text": "OUT - EOD"}],
+                [{"text": "OUT - Lunch"}, {"text": "OUT - Meeting"}],
+                [{"text": "/broadcast"}, {"text": "Help"}]
             ]
         else:
             kb = [
@@ -146,6 +157,42 @@ def process_message(chat_id, text):
     
     user = get_user_by_chat_id(chat_id)
     text_clean = text.strip()
+
+    role = dict(user).get("role", "user") if user else "user"
+    is_manager = dict(user).get("is_admin", False) or role == "manager"
+    
+    if text_clean.lower().startswith("/promote "):
+        if not dict(user).get("is_admin"): 
+            send_message(chat_id, "❌ Only Admins can promote users.")
+            return
+        parts = text_clean.split(" ", 2)
+        if len(parts) < 3:
+            send_message(chat_id, "Usage: `/promote <email> <manager/user>`")
+            return
+        target_email, new_role = parts[1], parts[2].lower()
+        if new_role not in ["manager", "user"]:
+            send_message(chat_id, "Role must be 'manager' or 'user'.")
+            return
+        with get_db() as conn:
+            conn.execute("UPDATE users SET role = ? WHERE email = ? COLLATE NOCASE", (new_role, target_email))
+            conn.commit()
+        send_message(chat_id, f"✅ User `{target_email}` has been updated to role: **{new_role}**")
+        return
+
+    if text_clean.lower().startswith("/set_group "):
+        if not is_manager: 
+            send_message(chat_id, "❌ Only Managers or Admins can explicitly set groups.")
+            return
+        parts = text_clean.split(" ", 2)
+        if len(parts) < 3:
+            send_message(chat_id, "Usage: `/set_group <email> <group_name>`")
+            return
+        target_email, new_group = parts[1], parts[2]
+        with get_db() as conn:
+            conn.execute("UPDATE users SET group_name = ? WHERE email = ? COLLATE NOCASE", (new_group, target_email))
+            conn.commit()
+        send_message(chat_id, f"✅ User `{target_email}` moved to group: **{new_group}**")
+        return
 
     if text_clean.lower() == "/cancel":
         if chat_id in onboarding_state:
@@ -286,9 +333,10 @@ def process_message(chat_id, text):
         return
 
     if text_clean.lower().startswith("/broadcast "):
-        if not dict(user).get("is_admin"): return
+        if not is_manager: return
         msg = text_clean.split(" ", 1)[1].strip()
-        b_msg = f"📢 **BROADCAST FROM ADMIN ({user['name']})**\n\n{msg}"
+        sender_title = "ADMIN" if dict(user).get("is_admin") else "MANAGER"
+        b_msg = f"📢 **BROADCAST FROM {sender_title} ({user['name']})**\n\n{msg}"
         with get_db() as conn:
             chats = conn.execute("SELECT telegram_chat_id FROM users WHERE telegram_chat_id IS NOT NULL").fetchall()
         count = 0
@@ -490,17 +538,30 @@ def process_message(chat_id, text):
                     "🤖 **Hermes Admin Help**\n\n"
                     "**Updating your status:**\n"
                     "Just message me naturally! (e.g. \"Heading to lunch\")\n\n"
-                    "**Updating OTHER people's status:**\n"
-                    "Since you are an admin, you can say: \"Set Dixon to out at the dentist\" or \"Mark Langner as IN\".\n\n"
                     "**Admin Commands:**\n"
                     "`/users` - List all registered users\n"
+                    "`/promote <email> <manager/user>` - Set user role\n"
                     "`/remove_user <email>` - Delete a user\n"
                     "`/remove_group <group>` - Delete a group\n"
-                    "`/set_status <email> <in/out> <location>` - Force update someone's status\n"
-                    "`/broadcast <message>` - Send a Telegram message to ALL users\n"
-                    "`/reset_all` - Force all users to OUT (Unknown)\n"
-                    "`/admin_logout` - De-elevate back to a normal user\n\n"
+                    "`/set_group <email> <group>` - Move a user\n"
+                    "`/set_status <email> <in/out> <location>` - Update status\n"
+                    "`/broadcast <message>` - Send a global broadcast\n"
+                    "`/reset_all` - Force all users to OUT\n"
+                    "`/admin_logout` - De-elevate back to normal role\n\n"
                     "*You can also use natural language to change the Onboarding PIN, Org Name, and Group Order!*"
+                )
+            elif dict(user).get("role") == "manager":
+                help_msg = (
+                    "🤖 **Hermes Manager Help**\n\n"
+                    "**Updating your status:**\n"
+                    "Just message me naturally! (e.g. \"Heading to lunch\")\n\n"
+                    "**Updating OTHER people's status:**\n"
+                    "Since you are a manager, you can say: \"Set Dixon to out at the dentist\".\n\n"
+                    "**Manager Commands:**\n"
+                    "`/set_group <email> <group>` - Move a user\n"
+                    "`/broadcast <message>` - Send a global broadcast\n"
+                    "`/admin <PIN>` - Elevate to Admin (15 mins)\n\n"
+                    "*You can also use natural language to update the Board Announcement!*"
                 )
             else:
                 help_msg = (
