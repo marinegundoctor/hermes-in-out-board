@@ -48,12 +48,25 @@ def send_message(chat_id, text, use_keyboard=True):
     url = f"{BASE_URL}/sendMessage"
     payload = {"chat_id": chat_id, "text": text}
     if use_keyboard:
-        payload["reply_markup"] = {
-            "keyboard": [
+        user = get_user_by_chat_id(chat_id)
+        is_admin = dict(user).get("is_admin", False) if user else False
+        
+        if is_admin:
+            kb = [
                 [{"text": "IN"}, {"text": "OUT - EOD"}],
                 [{"text": "OUT - Lunch"}, {"text": "OUT - Meeting"}],
-                [{"text": "/admin_help"}, {"text": "/rollcall"}]
-            ],
+                [{"text": "/rollcall"}, {"text": "/users"}],
+                [{"text": "/admin_help"}, {"text": "/admin_logout"}]
+            ]
+        else:
+            kb = [
+                [{"text": "IN"}, {"text": "OUT - EOD"}],
+                [{"text": "OUT - Lunch"}, {"text": "OUT - Meeting"}],
+                [{"text": "Help"}]
+            ]
+            
+        payload["reply_markup"] = {
+            "keyboard": kb,
             "resize_keyboard": True,
             "is_persistent": True
         }
@@ -456,13 +469,17 @@ def process_message(chat_id, text):
     # Removed to save network roundtrip
     
     try:
-        if text_clean in ["IN", "OUT - EOD", "OUT - Lunch", "OUT - Meeting"]:
-            action = "update_status"
-            if text_clean == "IN":
-                parsed_data = {"action": "update_status", "status": "in", "location": "--", "comment": "--"}
+        if text_clean in ["IN", "OUT - EOD", "OUT - Lunch", "OUT - Meeting", "Help", "/help"]:
+            if text_clean in ["Help", "/help"]:
+                action = "help"
+                parsed_data = {"action": "help"}
             else:
-                loc = text_clean.split("-")[1].strip()
-                parsed_data = {"action": "update_status", "status": "out", "location": loc, "comment": "--"}
+                action = "update_status"
+                if text_clean == "IN":
+                    parsed_data = {"action": "update_status", "status": "in", "location": "--", "comment": "--"}
+                else:
+                    loc = text_clean.split("-")[1].strip()
+                    parsed_data = {"action": "update_status", "status": "out", "location": loc, "comment": "--"}
         else:
             parsed_data = parse_status_message(text, is_admin=dict(user).get("is_admin", False))
         action = parsed_data.get("action", "update_status")
