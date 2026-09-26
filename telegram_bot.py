@@ -240,13 +240,15 @@ def process_message(chat_id, text):
         admin_help = (
             "🛠️ **Hermes Admin Commands**\n\n"
             "`/users` - List all registered users (Name, Email, Status)\n"
+            "`/promote <email> <manager/user>` - Set a user's role (Admin ONLY)\n"
             "`/remove_user <email>` - Delete a user completely\n"
             "`/remove_group <group>` - Delete a group (moves members to 'Unassigned')\n"
-            "`/set_status <email> <in/out> <location>` - Force update someone's status\n"
-            "`/broadcast <message>` - Send a Telegram message to ALL users\n"
-            "`/reset_all` - Force all users to OUT (Unknown)\n"
-            "`/admin_logout` - De-elevate back to a normal user\n\n"
-            "*Plus, you can now use natural language to change the Onboarding PIN, Org Name, and Group Order!*"
+            "`/set_group <email> <group>` - Move user to a group (Manager+)\n"
+            "`/set_status <email> <in/out> <location>` - Force update someone's status (Manager+)\n"
+            "`/broadcast <message>` - Send a Telegram message to ALL users (Manager+)\n"
+            "`/reset_all` - Force all users to OUT (Admin ONLY)\n"
+            "`/admin_logout` - De-elevate back to your default role\n\n"
+            "*Plus, you can now use natural language to promote users, change the PIN, Org Name, and Group Order!*"
         )
         send_message(chat_id, admin_help)
         return
@@ -622,6 +624,28 @@ def process_message(chat_id, text):
                     send_message(chat_id, f"✅ Updated **{target['name']}** to {target_status.upper()} ({target_loc}).")
                 else:
                     send_message(chat_id, f"❌ No user found matching the name: {target_user_name}")
+            return
+
+
+        if action == "promote_user":
+            if not dict(user).get("is_admin"):
+                send_message(chat_id, "❌ Only Admins can change user roles.")
+                return
+            target_name = parsed_data.get("target_user")
+            new_role = parsed_data.get("target_role", "").lower()
+            if not target_name or new_role not in ["manager", "user"]:
+                send_message(chat_id, "❌ I couldn't understand the name or role. Please specify 'manager' or 'user'.")
+                return
+            
+            with get_db() as conn:
+                target_user = conn.execute("SELECT email, name FROM users WHERE name LIKE ?", (f"%{target_name}%",)).fetchone()
+                if not target_user:
+                    send_message(chat_id, f"❌ No user found matching: {target_name}")
+                    return
+                
+                conn.execute("UPDATE users SET role = ? WHERE email = ?", (new_role, target_user['email']))
+                conn.commit()
+            send_message(chat_id, f"✅ **{target_user['name']}** has been updated to role: **{new_role}**")
             return
 
         if action == "update_announcement":

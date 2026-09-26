@@ -34,6 +34,7 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
        - If they ask to change the onboarding PIN or password, set "action" to "update_pin" and extract the new PIN as a string into "target_group".
        - If they ask to change the unit name, organization name, or company name, set "action" to "update_org_name" and extract the new name into "target_group".
        - If they ask to set, adjust, or change the group order (e.g., "Set group order to Command, Admin, Operations"), set "action" to "update_group_order" and extract the list of groups as a JSON array into "target_groups".
+       - If they ask to promote, elevate, or change a user's role (e.g., "elevate Dixon to manager", "make John a user"), set "action" to "promote_user". Extract the person's name into "target_user" and the role ("manager" or "user") into "target_role".
        - Otherwise, set "action" to "update_status".
 """ + admin_instructions + """
     2. Status must be "in" or "out". 
@@ -50,13 +51,14 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
        - Example 3: "Now update my status to: Running late because the IPPS-A dumpster is on fire." -> comment: "Delayed due to IPPS-A issues"
     5. STRICTLY filter and remove any foul language, profanity, complaints, or inappropriate words.
     6. If they mention going to lunch, set location to "Lunch" and comment to "--".
-    7. If no specific location is mentioned but they are out, use "Unknown". If they are in, use "--".
+    7. If no specific location is mentioned but they are out, use "--". If they are in, use "--".
     8. If no comment is needed, use "--".
     
     Respond ONLY with a valid JSON object matching this schema, with no markdown formatting or extra text:
     {
-        "action": "update_status", "admin_update_status", "change_group", "update_announcement", "update_pin", "update_org_name", "update_group_order", "help", or "ignore", 
+        "action": "update_status", "admin_update_status", "promote_user", "change_group", "update_announcement", "update_pin", "update_org_name", "update_group_order", "help", or "ignore", 
         "target_user": "string" (or null),
+        "target_role": "string" (or null) (Use this field for "manager" or "user" if action is promote_user),
         "target_group": "string" (or null) (Use this field for the new PIN if action is update_pin),
         "target_groups": ["string1", "string2"] (only used for update_group_order),
         "announcement_title": "string" (or null),
@@ -89,7 +91,7 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
         status = "in" if msg in ["in", "i'm in", "im in", "back", "here"] else "out"
         return {
             "status": status, 
-            "location": "Unknown" if status == "out" else "--", 
+            "location": "--", 
             "comment": user_message
         }
 
