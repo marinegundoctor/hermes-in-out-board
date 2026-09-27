@@ -7,11 +7,15 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
+      - "80:8000"
     volumes:
       - .:/app
     environment:
       - DB_PATH=/app/data/inout.db
-      - TZ=America/New_York
+      - TZ=America/Chicago
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     restart: unless-stopped
     
   bot:
@@ -24,7 +28,10 @@ services:
       - .env
     environment:
       - DB_PATH=/app/data/inout.db
-      - TZ=America/New_York
+      - TZ=America/Chicago
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     restart: unless-stopped
     depends_on:
       - api
