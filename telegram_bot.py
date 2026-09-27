@@ -289,21 +289,31 @@ def process_message(chat_id, text, message_id):
         send_message(chat_id, "🔒 **Admin Mode Deactivated.** You are now a normal user.")
         return
 
-    if text_clean.lower().startswith("/admin ") or text_clean.lower() == "/admin":
+    if text_clean.lower().startswith("/admin"):
+        # If they type `/admin` with no PIN, ask for it
         parts = text_clean.split(" ")
-        if len(parts) < 2:
-            send_message(chat_id, "ℹ️ To authenticate, type: `/admin <PIN>`")
+        if len(parts) == 1:
+            admin_auth_state[chat_id] = {"timestamp": __import__("time").time()}
+            send_message(chat_id, "🔒 Please enter your Admin PIN.\n*(Your next message will be automatically deleted for security).*")
             return
-        pin = parts[1].strip()
+            
+        # If they passed the PIN in the command (e.g. `/admin 211212`)
+        delete_message(chat_id, message_id) # Delete it immediately so it doesn't show in chat history!
+        
         with get_db() as conn:
-            correct_pin = conn.execute("SELECT admin_pin FROM app_settings WHERE id = 1").fetchone()
-            if correct_pin and pin == correct_pin["admin_pin"]:
+            settings = conn.execute("SELECT admin_pin FROM app_settings WHERE id = 1").fetchone()
+            admin_pin = settings["admin_pin"] if settings else "211212"
+            
+        pin = parts[1]
+        if pin == admin_pin:
+            if not user: return
+            with get_db() as conn:
                 conn.execute("UPDATE users SET is_admin = 1 WHERE id = ?", (user["id"],))
-                admin_timeouts[chat_id] = time.time() + 900
+                admin_timeouts[chat_id] = __import__("time").time() + 900
                 conn.commit()
-                send_message(chat_id, "🔓 **Admin Mode Activated!** (15-minute timeout)\n\nYou now have access to advanced commands. Type `/admin_help` to see them.")
-            else:
-                send_message(chat_id, "❌ Incorrect Admin PIN.")
+            send_message(chat_id, "🔓 **Admin Mode Activated!** (15-minute timeout)\n\nYou now have access to advanced commands. Type `/admin_help` to see them.")
+        else:
+            send_message(chat_id, "❌ Incorrect PIN.")
         return
 
     if text_clean.lower() == "/users":
