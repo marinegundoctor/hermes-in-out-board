@@ -1,14 +1,23 @@
-# Hermes In/Out Board (v1.2.1)
+# Hermes In/Out Board (v1.3.0)
 
-![Version](https://img.shields.io/badge/version-v1.2.1-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.3.0-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-green.svg)
-![Llama 3.1](https://img.shields.io/badge/AI-Meta%_Llama_3.1_70B-purple.svg)
+![Llama 4 Scout](https://img.shields.io/badge/AI-Llama%204%20Scout%2017B%20MoE-purple.svg)
+![Hermes 405B](https://img.shields.io/badge/AI%20Admin-Hermes%203%20405B-darkblue.svg)
 
 A modern, AI-powered digital In/Out board designed for professional environments (offices, military units, etc.). It features a clean web-based Kiosk display and uses a Telegram Bot ("Hermes") to process natural language status updates.
 
-Instead of employees clicking buttons or using specific commands, they can simply message the bot conversationally (e.g., "Running late due to traffic, I'll be in around 0930") or use the convenient **Interactive Telegram Buttons**. The bot leverages Meta Llama 3.1 70B Instruct Turbo (via DeepInfra) to extract their status, location, and a professional comment, instantly updating the Kiosk display.
+Instead of employees clicking buttons or using specific commands, they can simply message the bot conversationally (e.g., "Running late due to traffic, I'll be in around 0930") or use the convenient **Interactive Telegram Buttons**. The bot leverages a **two-tiered AI inference system** via DeepInfra — fast `Llama-4-Scout-17B-16E-Instruct` (MoE) for everyday status updates, and the full `Hermes-3-Llama-3.1-405B` for authenticated Admin operations — instantly updating the Kiosk display.
 
-## 🚀 New Features in v1.2.1
+## 🚀 New in v1.3.0
+- **Two-Tiered AI Inference**: Normal/Manager requests use the fast `Llama-4-Scout-17B` MoE model; authenticated Admin requests are automatically routed to the high-reasoning `Hermes-3 405B`.
+- **Relative Time Math**: Say "back in 45 min" and the bot calculates the real clock time (`Returning at 0145`), rounded to the nearest 5 minutes, using Chain-of-Thought arithmetic.
+- **Broadcast Prompt Mode**: Clicking `/broadcast` with no arguments enters a guided mode — the bot prompts for the message and waits, rather than showing a terse usage error.
+- **DNS Resilience**: Docker containers now bypass the local office DNS and use Google/Cloudflare public resolvers directly, so the bot stays online even when the local router's DNS goes down.
+- **Prompt Injection Hardening**: Jailbreak attempts ("forget all previous instructions…") are caught by the AI's action routing and safely deflected.
+- **Traffic Accident Phrasing**: Mentions of road accidents are rephrased to "Delayed by traffic" to avoid implying the user was personally in a collision.
+
+## 🚀 Features in v1.2.x
 - **Interactive Telegram Buttons**: Instantly update your status directly from Telegram with persistent inline buttons (`[ IN ]`, `[ OUT - Lunch ]`, `[ OUT - Meeting ]`).
 - **End-of-Day (EOD) Auto-Checkout**: A cron job runs every evening at 1800, automatically clearing the board and signing out anyone still checked "IN".
 - **Roll Call / Accountability Report**: Admins can run `/rollcall` to receive a real-time, timestamped accountability report of who is IN/OUT by group (perfect for emergencies or daily formations).
