@@ -14,6 +14,7 @@ DB_FILE = os.environ.get("DB_PATH", "inout.db")
 waiting_for_comment = {} # {chat_id: {"timestamp": ...}}
 onboarding_state = {} # {chat_id: {"step": "name", "name": "", "email": ""}}
 group_confirm_state = {} # {chat_id: {"requested_group": "xyz", "is_onboarding": bool}}
+broadcast_state = {} # {chat_id: True}
 
 def get_db():
     conn = sqlite3.connect(DB_FILE, timeout=10.0)
@@ -158,7 +159,7 @@ def create_account(chat_id, email, name, group_name, rank="", sort_weight=None):
         conn.commit()
 
 def process_message(chat_id, text, message_id):
-    global waiting_for_comment, onboarding_state, group_confirm_state, admin_auth_state
+    global waiting_for_comment, onboarding_state, group_confirm_state, admin_auth_state, broadcast_state
     
     user = get_user_by_chat_id(chat_id)
     text_clean = text.strip()
@@ -192,6 +193,27 @@ def process_message(chat_id, text, message_id):
     role = dict(user).get("role", "user") if user else "user"
     is_manager = dict(user).get("is_admin", False) or role == "manager"
     
+    # Handle pending broadcast message
+    if chat_id in broadcast_state:
+        del broadcast_state[chat_id]
+        if text_clean.lower() == "/cancel":
+            send_message(chat_id, "✅ Broadcast cancelled.")
+            return
+            
+        msg = text_clean
+        sender_title = "ADMIN" if dict(user).get("is_admin") else "MANAGER"
+        b_msg = f"📢 **BROADCAST FROM {sender_title} ({user['name']})**\n\n{msg}"
+        with get_db() as conn:
+            chats = conn.execute("SELECT telegram_chat_id FROM users WHERE telegram_chat_id IS NOT NULL").fetchall()
+        count = 0
+        for c in chats:
+            try:
+                send_message(c["telegram_chat_id"], b_msg)
+                count += 1
+            except Exception as e:
+                pass
+        send_message(chat_id, f"✅ Broadcast sent to {count} users.")
+        return
     if text_clean.lower().startswith("/promote "):
         if not dict(user).get("is_admin"): 
             send_message(chat_id, "❌ Only Admins can promote users.")
@@ -232,6 +254,8 @@ def process_message(chat_id, text, message_id):
             del group_confirm_state[chat_id]
         if chat_id in waiting_for_comment:
             del waiting_for_comment[chat_id]
+        if chat_id in broadcast_state:
+            del broadcast_state[chat_id]
         send_message(chat_id, "✅ Action cancelled. I'm listening for status updates.")
         return
 
@@ -394,7 +418,8 @@ def process_message(chat_id, text, message_id):
         if not is_manager: return
         parts = text_clean.split(" ", 1)
         if len(parts) < 2 or not parts[1].strip():
-            send_message(chat_id, "Usage: `/broadcast <message>`")
+            broadcast_state[chat_id] = True
+            send_message(chat_id, "📢 **Broadcast Mode**\nWhat message would you like to send to all users? (Type `/cancel` to abort)")
             return
         msg = parts[1].strip()
         sender_title = "ADMIN" if dict(user).get("is_admin") else "MANAGER"
