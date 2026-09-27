@@ -168,6 +168,11 @@ def process_message(chat_id, text, message_id):
         del admin_auth_state[chat_id]
         delete_message(chat_id, message_id)  # Mask the PIN by deleting it immediately
         
+        # Clear any pending interactive states
+        if chat_id in waiting_for_comment: del waiting_for_comment[chat_id]
+        if chat_id in group_confirm_state: del group_confirm_state[chat_id]
+        if chat_id in onboarding_state: del onboarding_state[chat_id]
+        
         with get_db() as conn:
             settings = conn.execute("SELECT admin_pin FROM app_settings WHERE id = 1").fetchone()
             admin_pin = settings["admin_pin"] if settings else "211212"
@@ -290,6 +295,11 @@ def process_message(chat_id, text, message_id):
         return
 
     if text_clean.lower().startswith("/admin"):
+        # Clear any pending interactive states
+        if chat_id in waiting_for_comment: del waiting_for_comment[chat_id]
+        if chat_id in group_confirm_state: del group_confirm_state[chat_id]
+        if chat_id in onboarding_state: del onboarding_state[chat_id]
+
         # If they type `/admin` with no PIN, ask for it
         parts = text_clean.split(" ")
         if len(parts) == 1:
@@ -563,6 +573,8 @@ def process_message(chat_id, text, message_id):
                 action = "update_status"
                 if text_clean == "IN":
                     parsed_data = {"action": "update_status", "status": "in", "location": "--", "comment": "--"}
+                elif text_clean == "OUT - EOD":
+                    parsed_data = {"action": "update_status", "status": "out", "location": "--", "comment": "--"}
                 else:
                     loc = text_clean.split("-")[1].strip()
                     parsed_data = {"action": "update_status", "status": "out", "location": loc, "comment": "--"}
