@@ -291,7 +291,7 @@ def process_message(chat_id, text, message_id):
         with get_db() as conn:
             conn.execute("UPDATE users SET is_admin = 0 WHERE id = ?", (user["id"],))
             conn.commit()
-        send_message(chat_id, "🔒 **Admin Mode Deactivated.** You are now a normal user.")
+        send_message(chat_id, "🔒 **Admin Mode Deactivated.**")
         return
 
     if text_clean.lower().startswith("/admin"):
@@ -329,14 +329,24 @@ def process_message(chat_id, text, message_id):
     if text_clean.lower() == "/users":
         if not dict(user).get("is_admin"): return
         with get_db() as conn:
-            users = conn.execute("SELECT name, email, status FROM users ORDER BY name").fetchall()
+            users = conn.execute("SELECT name, email, group_name FROM users ORDER BY group_name, name").fetchall()
         if not users:
             send_message(chat_id, "No users found.")
             return
-        msg = "📋 **All Registered Users**\n\n"
+            
+        from collections import defaultdict
+        groups = defaultdict(list)
         for u in users:
-            msg += f"• **{u['name']}** ({u['email']}) - Status: {u['status'].upper()}\n"
-        send_message(chat_id, msg)
+            groups[u['group_name'] or 'Unassigned'].append(dict(u))
+            
+        msg = "📋 **All Registered Users**\n\n"
+        for group_name, members in groups.items():
+            msg += f"**{group_name}**\n"
+            for u in members:
+                msg += f"• {u['name']} ({u['email']})\n"
+            msg += "\n"
+            
+        send_message(chat_id, msg.strip())
         return
 
     if text_clean.lower().startswith("/remove_user "):
