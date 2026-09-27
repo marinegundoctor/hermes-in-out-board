@@ -62,7 +62,7 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
     8. If no comment is needed, use "--".
     
     Respond ONLY with a valid JSON object matching this schema, with no markdown formatting or extra text:
-    {
+    {{
         "action": "update_status", "admin_update_status", "promote_user", "change_group", "update_announcement", "update_pin", "update_org_name", "update_group_order", "help", or "ignore", 
         "target_user": "string" (or null),
         "target_role": "string" (or null) (Use this field for "manager" or "user" if action is promote_user),
@@ -73,7 +73,7 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
         "status": "in" or "out",
         "location": "string",
         "comment": "string"
-    }
+    }}
     """
 
     try:
