@@ -83,6 +83,10 @@ def send_message(chat_id, text, use_keyboard=True):
         }
     requests.post(url, json=payload)
 
+def delete_message(chat_id, message_id):
+    url = f"{BASE_URL}/deleteMessage"
+    requests.post(url, json={"chat_id": chat_id, "message_id": message_id})
+
 def get_user_by_chat_id(chat_id):
     with get_db() as conn:
         return conn.execute("SELECT * FROM users WHERE telegram_chat_id = ?", (str(chat_id),)).fetchone()
@@ -95,6 +99,7 @@ def get_all_groups():
 
 last_eod_date = None
 admin_timeouts = {}
+admin_auth_state = {}
 
 def run_eod_reset():
     with get_db() as conn:
@@ -152,11 +157,32 @@ def create_account(chat_id, email, name, group_name, rank="", sort_weight=None):
             """, (email, name, uid, str(chat_id), group_name, rank, sort_weight))
         conn.commit()
 
-def process_message(chat_id, text):
-    global waiting_for_comment, onboarding_state, group_confirm_state
+def process_message(chat_id, text, message_id):
+    global waiting_for_comment, onboarding_state, group_confirm_state, admin_auth_state
     
     user = get_user_by_chat_id(chat_id)
     text_clean = text.strip()
+
+    # Handle pending admin auth
+    if chat_id in admin_auth_state:
+        del admin_auth_state[chat_id]
+        delete_message(chat_id, message_id)  # Mask the PIN by deleting it immediately
+        
+        with get_db() as conn:
+            settings = conn.execute("SELECT admin_pin FROM app_settings WHERE id = 1").fetchone()
+            admin_pin = settings["admin_pin"] if settings else "211212"
+            
+        if text_clean == admin_pin:
+            if not user: return # Cannot be admin without an account
+            with get_db() as conn:
+                conn.execute("UPDATE users SET is_admin = 1 WHERE id = ?", (user["id"],))
+                admin_timeouts[chat_id] = __import__("time").time() + 900
+                conn.commit()
+            send_message(chat_id, "🔓 **Admin Mode Activated!** (15-minute timeout)\n\nYou now have access to advanced commands. Type `/admin_help` to see them.")
+        else:
+            send_message(chat_id, "❌ Incorrect PIN.")
+        return
+
 
     role = dict(user).get("role", "user") if user else "user"
     is_manager = dict(user).get("is_admin", False) or role == "manager"
@@ -768,9 +794,10 @@ def main():
                     if "message" in update and "text" in update["message"]:
                         chat_id = update["message"]["chat"]["id"]
                         text = update["message"]["text"]
+                        message_id = update["message"]["message_id"]
                         
                         print(f"Received from {chat_id}: {text}")
-                        process_message(chat_id, text)
+                        process_message(chat_id, text, message_id)
                         
         except requests.exceptions.ReadTimeout:
             pass
