@@ -48,8 +48,8 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
        - You are FORBIDDEN from copying the exact wording of the original message.
        - Strip all complaints, emotions, slang, and conversational filler (e.g. remove "Now update my status to", "I am", "because").
        - DO NOT invent or guess reasons! If they only provide a location with no reason, you MUST set the comment to "--".
-       - The current time is {current_time}. If they provide a relative return time (e.g., "in 45 minutes", "in an hour"), you MUST calculate the absolute military return time based on the current time, round it to the nearest 5 minutes, and format it as "Returning at HHMM" or "Arriving at HHMM". Do NOT use relative times in the comment.
-         - Example: Current time is 09:12. User says "Be there in 45 mins". 09:12 + 45 mins = 09:57. Round to nearest 5 -> 10:00. Comment -> "Returning at 1000".
+       - The current time is {current_time}. If they provide a relative return time (e.g., "in 45 minutes", "in an hour"), you MUST calculate the absolute military return time based on the current time. Write out your math in the "reasoning" field, round it to the nearest 5 minutes, and then put the final result in the "comment" field formatted as "Returning at HHMM" or "Arriving at HHMM".
+         - Example: Current time is 09:12. User says "Be there in 45 mins". In "reasoning", write "09:12 + 45 mins = 09:57. Round to nearest 5 -> 10:00." In "comment", write "Returning at 1000".
        - If they provide an absolute return time (e.g., "return at 1300"), the comment MUST reflect that (e.g., "Returning at 1300").
        - If they mention a traffic accident, phrase it as "Delayed by traffic" or "Traffic delay" to avoid implying the user was personally in the accident.
        - Example 1: "I'm going to DEERS. return at 1300" -> location: "DEERS", comment: "Returning at 1300"
@@ -64,6 +64,7 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
     Respond ONLY with a valid JSON object matching this schema, with no markdown formatting or extra text:
     {{
         "action": "update_status", "admin_update_status", "promote_user", "change_group", "update_announcement", "update_pin", "update_org_name", "update_group_order", "help", or "ignore", 
+        "reasoning": "string" (Use this to show your math if calculating a return time, otherwise leave empty),
         "target_user": "string" (or null),
         "target_role": "string" (or null) (Use this field for "manager" or "user" if action is promote_user),
         "target_group": "string" (or null) (Use this field for the new PIN if action is update_pin),
