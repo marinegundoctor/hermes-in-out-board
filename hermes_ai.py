@@ -70,8 +70,9 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
     """
 
     try:
+        model_name = "NousResearch/Hermes-3-Llama-3.1-405B" if is_admin else "meta-llama/Llama-4-Scout-17B-16E-Instruct"
         response = client.chat.completions.create(
-            model="meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+            model=model_name,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
@@ -128,7 +129,7 @@ def parse_onboarding_name(user_message: str) -> dict:
     """
     try:
         response = client.chat.completions.create(
-            model="meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+            model="meta-llama/Llama-4-Scout-17B-16E-Instruct",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
