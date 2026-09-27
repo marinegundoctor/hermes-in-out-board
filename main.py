@@ -206,17 +206,20 @@ def setup_submit(org_name: str = Form(...)):
         conn.commit()
     return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
 
+SENSITIVE_USER_FIELDS = {"telegram_chat_id", "email", "card_id", "is_admin", "role", "id"}
+SENSITIVE_SETTINGS_FIELDS = {"onboarding_pin", "admin_pin", "id"}
+
 @app.get("/api/users")
 def get_users():
     with get_db() as conn:
         users = conn.execute("SELECT u.*, IFNULL(g.sort_index, 99) as group_sort FROM users u LEFT JOIN groups g ON u.group_name = g.name ORDER BY group_sort ASC, u.sort_weight ASC, u.name ASC").fetchall()
-        return [dict(u) for u in users]
+        return [{k: v for k, v in dict(u).items() if k not in SENSITIVE_USER_FIELDS} for u in users]
 
 @app.get("/api/settings")
 def get_settings():
     with get_db() as conn:
         settings = conn.execute("SELECT * FROM app_settings WHERE id = 1").fetchone()
-        data = dict(settings) if settings else {}
+        data = {k: v for k, v in dict(settings).items() if k not in SENSITIVE_SETTINGS_FIELDS} if settings else {}
         data["internet"] = network_status
         return data
 

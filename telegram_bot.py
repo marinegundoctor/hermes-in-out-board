@@ -369,7 +369,7 @@ def process_message(chat_id, text, message_id):
         return
 
     if text_clean.lower().startswith("/set_status "):
-        if not dict(user).get("is_admin"): return
+        if not is_manager: return
         parts = text_clean.split(" ")
         if len(parts) < 3:
             send_message(chat_id, "ℹ️ Usage: `/set_status <email> <in/out> <location>`")
@@ -379,7 +379,7 @@ def process_message(chat_id, text, message_id):
         if status not in ["in", "out"]:
             send_message(chat_id, "❌ Status must be 'in' or 'out'.")
             return
-        loc = " ".join(parts[3:]) if len(parts) > 3 else ("--" if status == "in" else "Unknown")
+        loc = " ".join(parts[3:]) if len(parts) > 3 else "--"
         with get_db() as conn:
             target = conn.execute("SELECT id, name FROM users WHERE email = ? COLLATE NOCASE", (email,)).fetchone()
             if target:
@@ -413,9 +413,9 @@ def process_message(chat_id, text, message_id):
     if text_clean.lower() == "/reset_all":
         if not dict(user).get("is_admin"): return
         with get_db() as conn:
-            conn.execute("UPDATE users SET status = 'out', location = 'Unknown', comment = '--', last_updated = CURRENT_TIMESTAMP")
+            conn.execute("UPDATE users SET status = 'out', location = '--', comment = '--', last_updated = CURRENT_TIMESTAMP")
             conn.commit()
-        send_message(chat_id, "✅ All users have been reset to OUT (Unknown).")
+        send_message(chat_id, "✅ All users have been reset to OUT.")
         return
 
 
@@ -498,7 +498,7 @@ def process_message(chat_id, text, message_id):
                     settings = conn.execute("SELECT onboarding_pin FROM app_settings WHERE id = 1").fetchone()
                     pin = settings["onboarding_pin"] if settings else "123456"
                     
-                send_message(chat_id, f"🎉 You're all set, {state['name']}!\n\nYou've been added to the **{group_name}** group. You can now text me your status updates!\n\n🔑 **IMPORTANT**: Since you are the first user, the default Onboarding PIN for new members is set to **{pin}**. I highly recommend you reply right now to change it (e.g., 'Change onboarding PIN to 987654').")
+                send_message(chat_id, f"🎉 You're all set, {state['name']}!\n\nYou've been added to the **{group_name}** group. You can now text me your status updates!\n\n🔑 **IMPORTANT**: Since you are the first user, please set a custom Onboarding PIN for new members right now (e.g., 'Change onboarding PIN to 987654').")
                 del onboarding_state[chat_id]
                 return
             else:
@@ -569,8 +569,7 @@ def process_message(chat_id, text, message_id):
             "**Changing your Profile (Rank, Name, Group, Email):**\n"
             "If you get promoted, married, or switch groups, just type `/start` at any time to re-enter your information.\n\n"
             "**Other Commands:**\n"
-            "- \"Move me to the S6 group\"\n"
-            "- \"Update the announcement: Title... Body...\""
+            "- \"Move me to the S6 group\""
         )
         send_message(chat_id, help_msg)
         return
@@ -640,7 +639,6 @@ def process_message(chat_id, text, message_id):
                     "**Other Commands:**\n"
                     "`/cancel` - Exit onboarding or any confirmation prompt\n"
                     "- \"Move me to the S6 group\"\n"
-                    "- \"Update the announcement: Title... Body...\""
                 )
             send_message(chat_id, help_msg)
             return
@@ -664,8 +662,8 @@ def process_message(chat_id, text, message_id):
             return
 
         if action == "admin_update_status":
-            if not dict(user).get("is_admin", False):
-                send_message(chat_id, "❌ You must be an Admin to perform this action. Type `/admin <PIN>` to authenticate.")
+            if not is_manager:
+                send_message(chat_id, "❌ Only Managers or Admins can update another user's status.")
                 return
             target_user_name = parsed_data.get("target_user")
             if not target_user_name:
