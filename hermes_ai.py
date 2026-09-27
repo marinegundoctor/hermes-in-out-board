@@ -19,7 +19,10 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
     admin_instructions = """
        - ADMIN ABILITY: If the user asks to update ANOTHER person's status (e.g. "Set Dixon to out", "Mark Lowery as in", "Update John to out at dental"), set "action" to "admin_update_status", extract the target person's name into "target_user", and extract their "status", "location", and "comment" as normal. DO THIS EVEN IF THEY ARE NOT AN ADMIN (the system will handle rejecting unauthorized users)."""
 
-    system_prompt = """
+    from datetime import datetime
+    current_time = datetime.now().strftime("%H:%M")
+
+    system_prompt = f"""
     You are the natural language processor for a professional military office In/Out board.
     An employee will send you a text message about their current status.
     You must extract their status, a brief location, and a summarized comment.
@@ -36,7 +39,7 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
        - If they ask to set, adjust, or change the group order (e.g., "Set group order to Command, Admin, Operations"), set "action" to "update_group_order" and extract the list of groups as a JSON array into "target_groups".
        - If they ask to promote, elevate, or change a user's role (e.g., "elevate Dixon to manager", "make John a user"), set "action" to "promote_user". Extract the person's name into "target_user" and the role ("manager" or "user") into "target_role".
        - Otherwise, set "action" to "update_status".
-""" + admin_instructions + """
+""" + admin_instructions + f"""
     2. Status must be "in" or "out". 
        - ONLY mark "in" if they explicitly state they are back at their desk, "in the office", "returned", or "arriving" at home base.
        - If they are moving between locations, traveling, "heading to X", "going to Y", or at an appointment, mark as "out".
@@ -45,10 +48,14 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
        - You are FORBIDDEN from copying the exact wording of the original message.
        - Strip all complaints, emotions, slang, and conversational filler (e.g. remove "Now update my status to", "I am", "because").
        - DO NOT invent or guess reasons! If they only provide a location with no reason, you MUST set the comment to "--".
-       - If they provide a return time (e.g., "return at 1300"), the comment MUST reflect that (e.g., "Returning at 1300").
+       - The current time is {current_time}. If they provide a relative return time (e.g., "in 45 minutes", "in an hour"), you MUST calculate the absolute military return time based on the current time, round it to the nearest 5 minutes, and format it as "Returning at HHMM" or "Arriving at HHMM". Do NOT use relative times in the comment.
+         - Example: Current time is 09:12. User says "Be there in 45 mins". 09:12 + 45 mins = 09:57. Round to nearest 5 -> 10:00. Comment -> "Returning at 1000".
+       - If they provide an absolute return time (e.g., "return at 1300"), the comment MUST reflect that (e.g., "Returning at 1300").
+       - If they mention a traffic accident, phrase it as "Delayed by traffic" or "Traffic delay" to avoid implying the user was personally in the accident.
        - Example 1: "I'm going to DEERS. return at 1300" -> location: "DEERS", comment: "Returning at 1300"
        - Example 2: "I'm running super late because this traffic sucks balls" -> comment: "Delayed due to traffic"
        - Example 3: "Now update my status to: Running late because the IPPS-A dumpster is on fire." -> comment: "Delayed due to IPPS-A issues"
+       - Example 4: "stuck because of a major accident" -> comment: "Delayed by traffic"
     5. STRICTLY filter and remove any foul language, profanity, complaints, or inappropriate words.
     6. If they mention going to lunch, set location to "Lunch" and comment to "--".
     7. If no specific location is mentioned but they are out, use "--". If they are in, use "--".
@@ -100,7 +107,8 @@ if __name__ == "__main__":
     # Test script
     print("Testing Hermes AI Parser...")
     test_messages = [
-        "Hey, I'm heading out to the dentist, I'll be back at 2:00 PM.",
+        "Hey, I'll be there in 45 min",
+        "stuck in a traffic jam because of a major accident",
         "Just got to building S70 for the quarterly review.",
         "I'm back at my desk.",
         "Taking an early lunch."
