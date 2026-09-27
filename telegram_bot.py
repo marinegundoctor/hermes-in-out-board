@@ -390,9 +390,13 @@ def process_message(chat_id, text, message_id):
                 send_message(chat_id, f"❌ No user found with email: {email}")
         return
 
-    if text_clean.lower().startswith("/broadcast "):
+    if text_clean.lower().startswith("/broadcast"):
         if not is_manager: return
-        msg = text_clean.split(" ", 1)[1].strip()
+        parts = text_clean.split(" ", 1)
+        if len(parts) < 2 or not parts[1].strip():
+            send_message(chat_id, "Usage: `/broadcast <message>`")
+            return
+        msg = parts[1].strip()
         sender_title = "ADMIN" if dict(user).get("is_admin") else "MANAGER"
         b_msg = f"📢 **BROADCAST FROM {sender_title} ({user['name']})**\n\n{msg}"
         with get_db() as conn:
@@ -707,6 +711,9 @@ def process_message(chat_id, text, message_id):
             return
 
         if action == "update_announcement":
+            if not is_manager:
+                send_message(chat_id, "❌ Only Managers or Admins can update the announcement.")
+                return
             title = parsed_data.get("announcement_title", "Announcement")
             body = parsed_data.get("announcement_body", "")
             if not body or body == "--":
@@ -721,6 +728,9 @@ def process_message(chat_id, text, message_id):
             return
 
         if action == "update_pin":
+            if not dict(user).get("is_admin"):
+                send_message(chat_id, "❌ Only Admins can update the onboarding PIN.")
+                return
             new_pin = parsed_data.get("target_group", "")
             if not new_pin:
                 send_message(chat_id, "❌ I didn't catch the new PIN. Please try again.")
@@ -732,6 +742,9 @@ def process_message(chat_id, text, message_id):
             return
 
         if action == "update_org_name":
+            if not dict(user).get("is_admin"):
+                send_message(chat_id, "❌ Only Admins can update the organization name.")
+                return
             new_org = parsed_data.get("target_group", "")
             if not new_org:
                 send_message(chat_id, "❌ I didn't catch the new organization name. Please try again.")
@@ -744,6 +757,9 @@ def process_message(chat_id, text, message_id):
             
         
         if action == "update_group_order":
+            if not dict(user).get("is_admin"):
+                send_message(chat_id, "❌ Only Admins can update the group order.")
+                return
             target_groups = parsed_data.get("target_groups", [])
             if not target_groups:
                 send_message(chat_id, "❌ I didn't catch the list of groups. Please try again.")
