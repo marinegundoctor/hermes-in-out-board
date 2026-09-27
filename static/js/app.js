@@ -209,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (locLower.includes("meeting")) iconClass = "fa-handshake";
                 else if (locLower.includes("tdy")) iconClass = "fa-plane";
                 else if (locLower.includes("leave")) iconClass = "fa-umbrella-beach";
+                else if (locLower.includes("dead")) iconClass = "fa-skull";
                 else if (user.location !== "--") iconClass = "fa-location-dot";
 
                 const locationIcon = user.location === '--' ? '' : `<i class="fa-solid ${iconClass}"></i> `;
