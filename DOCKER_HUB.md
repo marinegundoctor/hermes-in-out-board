@@ -1,5 +1,9 @@
 # 🪖 Hermes In/Out Board
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/marinegundoctor/hermes-in-out-board/main/assets/hermes_logo.jpg" alt="Hermes In/Out Board Logo" width="220"/>
+</p>
+
 **A smart, AI-powered digital In/Out board for professional offices and military units.**
 
 [![Version](https://img.shields.io/badge/version-v1.3.0-blue.svg)](https://github.com/marinegundoctor/hermes-in-out-board/releases)
