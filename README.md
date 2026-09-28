@@ -1,5 +1,10 @@
 # Hermes In/Out Board (v1.3.0)
 
+<p align="center">
+  <img src="assets/hermes_logo.jpg" alt="Hermes In/Out Board Logo" width="200"/>
+</p>
+
+
 ![Version](https://img.shields.io/badge/version-v1.3.0-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-green.svg)
 ![Llama 4 Scout](https://img.shields.io/badge/AI-Llama%204%20Scout%2017B%20MoE-purple.svg)

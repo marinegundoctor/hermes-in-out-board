@@ -23,10 +23,27 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Extract version from README
+        id: version
+        run: |
+          VERSION=$(grep -m1 'version-v' README.md | grep -oP 'v\d+\.\d+\.\d+' | head -1)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Detected version: ${VERSION}"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: marinegundoctor/hermes-in-out-board:latest
+          tags: |
+            marinegundoctor/hermes-in-out-board:latest
+            marinegundoctor/hermes-in-out-board:${{ steps.version.outputs.version }}
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: marinegundoctor/hermes-in-out-board
+          readme-filepath: ./DOCKER_HUB.md
