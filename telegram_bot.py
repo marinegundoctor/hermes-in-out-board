@@ -201,8 +201,10 @@ def process_message(chat_id, text, message_id):
             return
             
         msg = text_clean
-        sender_title = "ADMIN" if dict(user).get("is_admin") else "MANAGER"
-        b_msg = f"📢 **BROADCAST FROM {sender_title} ({user['name']})**\n\n{msg}"
+        sender_rank = dict(user).get("rank", "").strip()
+        sender_name = user['name']
+        sender_display = f"{sender_rank} {sender_name}".strip()
+        b_msg = f"📢 **BROADCAST FROM {sender_display}**\n\n{msg}"
         with get_db() as conn:
             chats = conn.execute("SELECT telegram_chat_id FROM users WHERE telegram_chat_id IS NOT NULL").fetchall()
         count = 0
@@ -422,8 +424,10 @@ def process_message(chat_id, text, message_id):
             send_message(chat_id, "📢 **Broadcast Mode**\nWhat message would you like to send to all users? (Type `/cancel` to abort)")
             return
         msg = parts[1].strip()
-        sender_title = "ADMIN" if dict(user).get("is_admin") else "MANAGER"
-        b_msg = f"📢 **BROADCAST FROM {sender_title} ({user['name']})**\n\n{msg}"
+        sender_rank = dict(user).get("rank", "").strip()
+        sender_name = user['name']
+        sender_display = f"{sender_rank} {sender_name}".strip()
+        b_msg = f"📢 **BROADCAST FROM {sender_display}**\n\n{msg}"
         with get_db() as conn:
             chats = conn.execute("SELECT telegram_chat_id FROM users WHERE telegram_chat_id IS NOT NULL").fetchall()
         count = 0
