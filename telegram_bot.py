@@ -589,7 +589,7 @@ def process_message(chat_id, text, message_id):
     # Handle Literal Help Command
     if text_clean.lower() in ["help", "/help"]:
         help_msg = (
-            "🤖 **Hermes Bot Help**\n\n"
+            "🤖 **The Office Bot Help**\n\n"
             "**Updating your status:**\n"
             "Just message me naturally! Examples:\n"
             "- \"Heading to lunch\"\n"
@@ -657,7 +657,7 @@ def process_message(chat_id, text, message_id):
                 )
             else:
                 help_msg = (
-                    "🤖 **Hermes Bot Help**\n\n"
+                    "🤖 **The Office Bot Help**\n\n"
                     "**Updating your status:**\n"
                     "Just message me naturally! Examples:\n"
                     "- \"Heading to lunch\"\n"

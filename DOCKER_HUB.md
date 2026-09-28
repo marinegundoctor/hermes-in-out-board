@@ -1,7 +1,7 @@
 # 🪖 Hermes In/Out Board
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/marinegundoctor/hermes-in-out-board/main/assets/hermes_logo.jpg" alt="Hermes In/Out Board Logo" width="220"/>
+  <img src="https://raw.githubusercontent.com/marinegundoctor/hermes-in-out-board/main/assets/hermes_social_preview.jpg" alt="Hermes In/Out Board Banner" width="100%"/>
 </p>
 
 **A smart, AI-powered digital In/Out board for professional offices and military units.**
@@ -12,7 +12,7 @@
 
 ---
 
-Employees update their status conversationally through a **Telegram Bot** ("Hermes") — no apps, no forms, no buttons to hunt down. Just text naturally, like messaging a coworker.
+Employees update their status conversationally through **The Office Bot** on Telegram — no apps, no forms, no buttons to hunt down. Just text naturally, like messaging a coworker.
 
 > *"Heading to DEERS, back around 1400"* → ✅ **OUT** | Location: DEERS | Comment: Returning at 1400
 
@@ -23,7 +23,7 @@ A real-time **web kiosk dashboard** updates instantly for everyone in the office
 ## ✨ Key Features
 
 - 🤖 **Natural Language AI** — Two-tiered inference: fast `Llama-4-Scout-17B` (MoE) for everyday updates, powerful `Hermes-3 405B` for authenticated admin operations
-- 📱 **Telegram Bot** with role-aware quick-pick buttons (IN, OUT – Lunch, OUT – Meeting, etc.)
+- 📱 **The Office Bot (Telegram)** with role-aware quick-pick buttons (IN, OUT – Lunch, OUT – Meeting, etc.)
 - 🖥️ **Live Web Kiosk Dashboard** — auto-refreshing, grouped by unit/team, dark-themed
 - 🏷️ **Smart Card / CAC / RFID** tap-to-check-in/out support
 - 👮 **Role System** — Users, Managers, and time-limited Admin sessions (15-min timeout)
@@ -33,6 +33,15 @@ A real-time **web kiosk dashboard** updates instantly for everyone in the office
 - 🌐 **DNS Resilient** — Containers use public DNS (8.8.8.8 / 1.1.1.1) directly
 - 🔒 **Prompt Injection Hardened** — Jailbreak attempts are safely caught and deflected
 - 📡 **Tailscale-Ready** — Designed for private network deployment (no public ports needed)
+
+---
+
+## 🗺️ Planned Features / Roadmap
+
+- 🎛️ **Dedicated Touchscreen Admin Panel**: Transition the small touchscreen display from being a passive mirror of the in/out board to an interactive kiosk control console with a secure, on-screen Admin Panel mode.
+- ⚙️ **Comprehensive Kiosk Administration**: Manage board configuration directly from the screen (beyond what's practical over Telegram), including user onboarding, rank adjustments, group creation, and custom group icon selection from a visual grid.
+- 🎨 **Configurable Dashboard Branding**: Customize the dashboard title and unit headers directly in settings (e.g. dynamic organization naming and custom dashboard titles).
+- 🔐 **Touchscreen API Authentication**: Add secure session tokens for write actions initiated from touchscreen kiosks.
 
 ---
 

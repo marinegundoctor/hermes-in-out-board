@@ -1,7 +1,7 @@
 # Hermes In/Out Board (v1.3.0)
 
 <p align="center">
-  <img src="assets/hermes_logo.jpg" alt="Hermes In/Out Board Logo" width="200"/>
+  <img src="assets/hermes_social_preview.jpg" alt="Hermes In/Out Board Banner" width="100%"/>
 </p>
 
 
@@ -10,9 +10,15 @@
 ![Llama 4 Scout](https://img.shields.io/badge/AI-Llama%204%20Scout%2017B%20MoE-purple.svg)
 ![Hermes 405B](https://img.shields.io/badge/AI%20Admin-Hermes%203%20405B-darkblue.svg)
 
-A modern, AI-powered digital In/Out board designed for professional environments (offices, military units, etc.). It features a clean web-based Kiosk display and uses a Telegram Bot ("Hermes") to process natural language status updates.
+A modern, AI-powered digital In/Out board designed for professional environments (offices, military units, etc.). It features a clean web-based Kiosk display and uses a Telegram Bot ("The Office Bot") to process natural language status updates.
 
 Instead of employees clicking buttons or using specific commands, they can simply message the bot conversationally (e.g., "Running late due to traffic, I'll be in around 0930") or use the convenient **Interactive Telegram Buttons**. The bot leverages a **two-tiered AI inference system** via DeepInfra — fast `Llama-4-Scout-17B-16E-Instruct` (MoE) for everyday status updates, and the full `Hermes-3-Llama-3.1-405B` for authenticated Admin operations — instantly updating the Kiosk display.
+
+## 🗺️ Planned Features / Roadmap
+- 🎛️ **Dedicated Touchscreen Admin Panel**: Transition the small touchscreen display from being a passive mirror of the in/out board to an interactive kiosk control console with a secure, on-screen Admin Panel mode.
+- ⚙️ **Comprehensive Kiosk Administration**: Manage board configuration directly from the screen (beyond what's practical over Telegram), including user onboarding, rank adjustments, group creation, and custom group icon selection from a visual grid.
+- 🎨 **Configurable Dashboard Branding**: Customize the dashboard title and unit headers directly in settings (e.g. dynamic organization naming and custom dashboard titles).
+- 🔐 **Touchscreen API Authentication**: Add secure session tokens for write actions initiated from touchscreen kiosks.
 
 ## 🚀 New in v1.3.0
 - **Two-Tiered AI Inference**: Normal/Manager requests use the fast `Llama-4-Scout-17B` MoE model; authenticated Admin requests are automatically routed to the high-reasoning `Hermes-3 405B`.
@@ -34,7 +40,7 @@ Instead of employees clicking buttons or using specific commands, they can simpl
 - **Touchscreen & Keyboard Dual Usability**: The kiosk interface supports both physical keyboards AND direct capacitive touch controls with large interactive tiles.
 - **Real-time Dual-Screen Kiosk Display**: A sleek, auto-updating web dashboard. The host Raspberry Pi simultaneously drives an interactive touch display for employee check-ins and an external display for public viewing.
 - **Backend Internet Watchdog**: The Python backend continuously monitors upstream connectivity and roundtrip latency using captive portal probes.
-- **Telegram Integration**: Employees manage their status conversationally through a secure Telegram bot ("Hermes").
+- **Telegram Integration**: Employees manage their status conversationally through a secure Telegram bot ("The Office Bot").
 
 ## Optional OS-Level Features & Architecture
 - **Smart Card Reader Service**: A lightweight Python service running on the host OS (`card_reader.py`) that monitors smart card insertions via `pyscard`, reads ISO 14443-A UIDs, routes status updates to the local API. See [docs/smartcard_setup.md](docs/smartcard_setup.md).
