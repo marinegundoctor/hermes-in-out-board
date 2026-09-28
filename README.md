@@ -14,7 +14,7 @@ Instead of employees clicking buttons or using specific commands, they can simpl
 - **Relative Time Math**: Say "back in 45 min" and the bot calculates the real clock time (`Returning at 0145`), rounded to the nearest 5 minutes, using Chain-of-Thought arithmetic.
 - **Broadcast Prompt Mode**: Clicking `/broadcast` with no arguments enters a guided mode — the bot prompts for the message and waits, rather than showing a terse usage error.
 - **DNS Resilience**: Docker containers now bypass the local office DNS and use Google/Cloudflare public resolvers directly, so the bot stays online even when the local router's DNS goes down.
-- **Prompt Injection Hardening**: Jailbreak attempts are caught by the AI's action routing and safely deflected.
+- **Prompt Injection Hardening**: Jailbreak attempts ("forget all previous instructions…") are caught by the AI's action routing and safely deflected.
 - **Traffic Accident Phrasing**: Mentions of road accidents are rephrased to "Delayed by traffic" to avoid implying the user was personally in a collision, unless explicitly stated ("I was in an accident", "I got hit by a x", etc.).
 
 ## 🚀 Features in v1.2.x
@@ -32,7 +32,7 @@ Instead of employees clicking buttons or using specific commands, they can simpl
 - **Telegram Integration**: Employees manage their status conversationally through a secure Telegram bot ("Hermes").
 
 ## Optional OS-Level Features & Architecture
-- **Smart Card Reader Service**: A lightweight Python service running on the host OS (`card_reader.py`) that monitors smart card NFC taps via `pyscard`, reads ISO 14443-A UIDs, routes status updates to the local API. See [docs/smartcard_setup.md](docs/smartcard_setup.md).
+- **Smart Card Reader Service**: A lightweight Python service running on the host OS (`card_reader.py`) that monitors smart card insertions via `pyscard`, reads ISO 14443-A UIDs, routes status updates to the local API. See [docs/smartcard_setup.md](docs/smartcard_setup.md).
 - **Remote Kiosk Displays (Hermes Display Net)**: Connect secondary displays across shops or hallways over an isolated local hotspot. See [docs/remote_display_setup.md](docs/remote_display_setup.md).
 
 ## Prerequisites

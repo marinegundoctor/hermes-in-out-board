@@ -51,11 +51,13 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
        - The current time is {current_time}. If they provide a relative return time (e.g., "in 45 minutes", "in an hour"), you MUST calculate the absolute military return time based on the current time. Write out your math in the "reasoning" field, round it to the nearest 5 minutes, and then put the final result in the "comment" field formatted as "Returning at HHMM" or "Arriving at HHMM".
          - Example: Current time is 09:12. User says "Be there in 45 mins". In "reasoning", write "09:12 + 45 mins = 09:57. Round to nearest 5 -> 10:00." In "comment", write "Returning at 1000".
        - If they provide an absolute return time (e.g., "return at 1300"), the comment MUST reflect that (e.g., "Returning at 1300").
-       - If they mention a traffic accident, phrase it as "Delayed by traffic" or "Traffic delay" to avoid implying the user was personally in the accident.
+       - ACCIDENT RULE: If the accident is clearly external/environmental (e.g., "stuck because of an accident", "accident on the highway", "traffic jam from a wreck"), phrase it as "Delayed by traffic". Do NOT imply the user was involved. However, if the user EXPLICITLY states they were personally in an accident (e.g., "I was in an accident", "I got hit by a car", "I was rear-ended"), acknowledge it accurately (e.g., "Involved in a traffic accident").
        - Example 1: "I'm going to DEERS. return at 1300" -> location: "DEERS", comment: "Returning at 1300"
        - Example 2: "I'm running super late because this traffic sucks balls" -> comment: "Delayed due to traffic"
        - Example 3: "Now update my status to: Running late because the IPPS-A dumpster is on fire." -> comment: "Delayed due to IPPS-A issues"
-       - Example 4: "stuck because of a major accident" -> comment: "Delayed by traffic"
+       - Example 4: "stuck because of a major accident on the highway" -> comment: "Delayed by traffic"
+       - Example 5: "I was in a car accident, I'll be late" -> comment: "Involved in a traffic accident"
+       - Example 6: "I got rear-ended on the way in" -> comment: "Involved in a traffic accident"
     5. STRICTLY filter and remove any foul language, profanity, complaints, or inappropriate words.
     6. If they mention going to lunch, set location to "Lunch" and comment to "--".
     7. If no specific location is mentioned but they are out, use "--". If they are in, use "--".
