@@ -18,3 +18,18 @@ env/
 # IDE
 .vscode/
 .idea/
+
+# Dev artifacts (one-off patch/fix/recovery scripts generated during development)
+patch_*.py
+fix_*.py
+recover_*.py
+rewrite_*.py
+strip_*.py
+decompiled_*.py
+test_admin_ai.py
+transcript_line.json
+recovered_*.py
+
+# Runtime data directory
+data/
+telegram_bot_restored.py
