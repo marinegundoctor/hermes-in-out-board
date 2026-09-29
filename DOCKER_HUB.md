@@ -6,7 +6,7 @@
 
 **A smart, AI-powered digital In/Out board for professional offices and military units.**
 
-[![Version](https://img.shields.io/badge/version-v1.3.0-blue.svg)](https://github.com/marinegundoctor/hermes-in-out-board/releases)
+[![Version](https://img.shields.io/badge/version-v1.4.0-blue.svg)](https://github.com/marinegundoctor/hermes-in-out-board/releases)
 [![GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/marinegundoctor/hermes-in-out-board)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/marinegundoctor/hermes-in-out-board/blob/main/LICENSE)
 

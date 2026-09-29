@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-09-29
+
+### Added
+- **User Removal (Slash & Natural Language)**: Admins can now delete users via `/remove_user <email or name>` with fuzzy matching, or simply by chatting with the bot (*"delete user John"* or *"remove Dixon"*).
+- **Group Removal (Slash & Natural Language)**: Admins can remove groups via `/remove_group <group>` or naturally (*"remove group Operations"*). Active members are safely moved to `Unassigned`.
+- **Member Group Reassignment**: Managers and Admins can reassign colleagues to different groups naturally (*"move Dixon to S6"*).
+- **Manager Roll Call Access**: Expanded `/rollcall` permission to Managers in addition to Admins, and added a dedicated `/rollcall` button to the Manager Telegram keyboard.
+
+### Changed
+- **Bot Rebranding**: Official Telegram identity updated to **The Office Bot** across all help menus, commands, and documentation.
+- **Dashboard Branding**: Main navbar header updated to **Office Dashboard** (v2.2).
+
 ## [1.3.0] - 2026-09-27
 
 ### Added

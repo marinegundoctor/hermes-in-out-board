@@ -1,11 +1,11 @@
-# Hermes In/Out Board (v1.3.0)
+# Hermes In/Out Board (v1.4.0)
 
 <p align="center">
   <img src="assets/hermes_social_preview.jpg" alt="Hermes In/Out Board Banner" width="100%"/>
 </p>
 
 
-![Version](https://img.shields.io/badge/version-v1.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.4.0-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-green.svg)
 ![Llama 4 Scout](https://img.shields.io/badge/AI-Llama%204%20Scout%2017B%20MoE-purple.svg)
 ![Hermes 405B](https://img.shields.io/badge/AI%20Admin-Hermes%203%20405B-darkblue.svg)
@@ -20,7 +20,13 @@ Instead of employees clicking buttons or using specific commands, they can simpl
 - 🎨 **Configurable Dashboard Branding**: Customize the dashboard title and unit headers directly in settings (e.g. dynamic organization naming and custom dashboard titles).
 - 🔐 **Touchscreen API Authentication**: Add secure session tokens for write actions initiated from touchscreen kiosks.
 
-## 🚀 New in v1.3.0
+## 🚀 New in v1.4.0
+- **Natural Language & Slash User Removal**: Admins can remove users via `/remove_user <email or name>` with fuzzy matching, or by simply telling the bot: *"delete user John"* / *"remove Dixon"*.
+- **Group Removal & Member Reassignment**: Remove entire groups with automatic member migration to `Unassigned`, or move members between groups conversationally (*"move Dixon to S6"*).
+- **Manager Roll Call Access**: Managers can now trigger `/rollcall` for instant team accountability, directly accessible via a new button on their Telegram keyboard.
+- **The Office Bot & Office Dashboard Branding**: Standardized application naming across all client touchpoints.
+
+## 🚀 Features in v1.3.x
 - **Two-Tiered AI Inference**: Normal/Manager requests use the fast `Llama-4-Scout-17B` MoE model; authenticated Admin requests are automatically routed to the high-reasoning `Hermes-3 405B`.
 - **Relative Time Math**: Say "back in 45 min" and the bot calculates the real clock time (`Returning at 0145`), rounded to the nearest 5 minutes, using Chain-of-Thought arithmetic.
 - **Broadcast Prompt Mode**: Clicking `/broadcast` with no arguments enters a guided mode — the bot prompts for the message and waits, rather than showing a terse usage error.
