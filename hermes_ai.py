@@ -38,6 +38,9 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
        - If they ask to change the unit name, organization name, or company name, set "action" to "update_org_name" and extract the new name into "target_group".
        - If they ask to set, adjust, or change the group order (e.g., "Set group order to Command, Admin, Operations"), set "action" to "update_group_order" and extract the list of groups as a JSON array into "target_groups".
        - If they ask to promote, elevate, or change a user's role (e.g., "elevate Dixon to manager", "make John a user"), set "action" to "promote_user". Extract the person's name into "target_user" and the role ("manager" or "user") into "target_role".
+       - If they ask to remove or delete a user (e.g., "remove user John", "delete Dixon", "remove user test@example.com"), set "action" to "remove_user" and extract the user's name or email into "target_user".
+       - If they ask to remove or delete a group (e.g., "remove group Operations", "delete the S6 group"), set "action" to "remove_group" and extract the group name into "target_group".
+       - If they ask to move another person to a group (e.g., "move Dixon to S6", "put John in Operations"), set "action" to "set_user_group", extract the person's name into "target_user", and extract the group name into "target_group".
        - Otherwise, set "action" to "update_status".
 """ + admin_instructions + f"""
     2. Status must be "in" or "out". 
@@ -65,7 +68,7 @@ def parse_status_message(user_message: str, is_admin: bool = False) -> dict:
     
     Respond ONLY with a valid JSON object matching this schema, with no markdown formatting or extra text:
     {{
-        "action": "update_status", "admin_update_status", "promote_user", "change_group", "update_announcement", "update_pin", "update_org_name", "update_group_order", "help", or "ignore", 
+        "action": "update_status", "admin_update_status", "promote_user", "remove_user", "remove_group", "set_user_group", "change_group", "update_announcement", "update_pin", "update_org_name", "update_group_order", "help", or "ignore", 
         "reasoning": "string" (Use this to show your math if calculating a return time, otherwise leave empty),
         "target_user": "string" (or null),
         "target_role": "string" (or null) (Use this field for "manager" or "user" if action is promote_user),

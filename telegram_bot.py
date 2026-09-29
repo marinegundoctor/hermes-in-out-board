@@ -68,7 +68,8 @@ def send_message(chat_id, text, use_keyboard=True):
             kb = [
                 [{"text": "IN"}, {"text": "OUT - EOD"}],
                 [{"text": "OUT - Lunch"}, {"text": "OUT - Meeting"}],
-                [{"text": "/broadcast"}, {"text": "Help"}]
+                [{"text": "/rollcall"}, {"text": "/broadcast"}],
+                [{"text": "Help"}]
             ]
         else:
             kb = [
@@ -262,8 +263,8 @@ def process_message(chat_id, text, message_id):
         return
 
     if text_clean.lower() == "/rollcall":
-        if not dict(user).get("is_admin"): 
-            send_message(chat_id, "❌ You must be an Admin to perform this action.")
+        if not is_manager: 
+            send_message(chat_id, "❌ Only Managers or Admins can perform a roll call.")
             return
         with get_db() as conn:
             users = conn.execute("SELECT name, status, location, datetime(last_updated, 'localtime') as local_time, group_name FROM users ORDER BY group_name, name").fetchall()
@@ -295,7 +296,8 @@ def process_message(chat_id, text, message_id):
 
     if text_clean.lower() == "/admin_help":
         admin_help = (
-            "🛠️ **Hermes Admin Commands**\n\n"
+            "🛠️ **The Office Bot Admin Commands**\n\n"
+            "`/rollcall` - Grouped accountability report\n"
             "`/users` - List all registered users (Name, Email, Status)\n"
             "`/promote <email> <manager/user>` - Set a user's role (Admin ONLY)\n"
             "`/remove_user <email>` - Delete a user completely\n"
@@ -305,7 +307,7 @@ def process_message(chat_id, text, message_id):
             "`/broadcast <message>` - Send a Telegram message to ALL users (Manager+)\n"
             "`/reset_all` - Force all users to OUT (Admin ONLY)\n"
             "`/admin_logout` - De-elevate back to your default role\n\n"
-            "*Plus, you can now use natural language to promote users, change the PIN, Org Name, and Group Order!*"
+            "*Plus, you can now use natural language to remove users/groups, move members, promote users, and change the PIN, Org Name, or Group Order!*"
         )
         send_message(chat_id, admin_help)
         return
@@ -375,23 +377,42 @@ def process_message(chat_id, text, message_id):
         send_message(chat_id, msg.strip())
         return
 
-    if text_clean.lower().startswith("/remove_user "):
-        if not dict(user).get("is_admin"): return
-        email = text_clean.split(" ", 1)[1].strip()
+    if text_clean.lower().startswith("/remove_user"):
+        if not dict(user).get("is_admin"): 
+            send_message(chat_id, "❌ Only Admins can remove users.")
+            return
+        parts = text_clean.split(" ", 1)
+        if len(parts) < 2 or not parts[1].strip():
+            send_message(chat_id, "ℹ️ Usage: `/remove_user <email or name>`")
+            return
+        target_identifier = parts[1].strip()
         with get_db() as conn:
-            conn.execute("DELETE FROM users WHERE email = ? COLLATE NOCASE", (email,))
+            target = conn.execute(
+                "SELECT id, name, email FROM users WHERE email = ? COLLATE NOCASE OR name LIKE ? COLLATE NOCASE",
+                (target_identifier, f"%{target_identifier}%")
+            ).fetchone()
+            if not target:
+                send_message(chat_id, f"❌ No user found matching `{target_identifier}`.")
+                return
+            conn.execute("DELETE FROM users WHERE id = ?", (target["id"],))
             conn.commit()
-        send_message(chat_id, f"🗑️ User `{email}` has been removed.")
+        send_message(chat_id, f"🗑️ User **{target['name']}** (`{target['email']}`) has been removed.")
         return
 
-    if text_clean.lower().startswith("/remove_group "):
-        if not dict(user).get("is_admin"): return
-        group = text_clean.split(" ", 1)[1].strip()
+    if text_clean.lower().startswith("/remove_group"):
+        if not dict(user).get("is_admin"): 
+            send_message(chat_id, "❌ Only Admins can remove groups.")
+            return
+        parts = text_clean.split(" ", 1)
+        if len(parts) < 2 or not parts[1].strip():
+            send_message(chat_id, "ℹ️ Usage: `/remove_group <group_name>`")
+            return
+        group = parts[1].strip()
         with get_db() as conn:
             conn.execute("DELETE FROM groups WHERE name = ? COLLATE NOCASE", (group,))
             conn.execute("UPDATE users SET group_name = 'Unassigned' WHERE group_name = ? COLLATE NOCASE", (group,))
             conn.commit()
-        send_message(chat_id, f"🗑️ Group `{group}` removed. Members moved to 'Unassigned'.")
+        send_message(chat_id, f"🗑️ Group **{group}** removed. Any members have been moved to 'Unassigned'.")
         return
 
     if text_clean.lower().startswith("/set_status "):
@@ -627,7 +648,7 @@ def process_message(chat_id, text, message_id):
         if action == "help":
             if dict(user).get("is_admin"):
                 help_msg = (
-                    "🤖 **Hermes Admin Help**\n\n"
+                    "🤖 **The Office Bot Admin Help**\n\n"
                     "**Updating your status:**\n"
                     "Just message me naturally! (e.g. \"Heading to lunch\")\n\n"
                     "**Admin Commands:**\n"
@@ -640,16 +661,17 @@ def process_message(chat_id, text, message_id):
                     "`/broadcast <message>` - Send a global broadcast\n"
                     "`/reset_all` - Force all users to OUT\n"
                     "`/admin_logout` - De-elevate back to normal role\n\n"
-                    "*You can also use natural language to change the Onboarding PIN, Org Name, and Group Order!*"
+                    "*You can also use natural language to remove users/groups, move members, promote users, and change the PIN, Org Name, or Group Order!*"
                 )
             elif dict(user).get("role") == "manager":
                 help_msg = (
-                    "🤖 **Hermes Manager Help**\n\n"
+                    "🤖 **The Office Bot Manager Help**\n\n"
                     "**Updating your status:**\n"
                     "Just message me naturally! (e.g. \"Heading to lunch\")\n\n"
                     "**Updating OTHER people's status:**\n"
                     "Since you are a manager, you can say: \"Set Dixon to out at the dentist\".\n\n"
                     "**Manager Commands:**\n"
+                    "`/rollcall` - Grouped accountability report\n"
                     "`/set_group <email> <group>` - Move a user\n"
                     "`/broadcast <message>` - Send a global broadcast\n"
                     "`/admin <PIN>` - Elevate to Admin (15 mins)\n\n"
@@ -735,6 +757,64 @@ def process_message(chat_id, text, message_id):
                 conn.execute("UPDATE users SET role = ? WHERE email = ?", (new_role, target_user['email']))
                 conn.commit()
             send_message(chat_id, f"✅ **{target_user['name']}** has been updated to role: **{new_role}**")
+            return
+
+        if action == "remove_user":
+            if not dict(user).get("is_admin"):
+                send_message(chat_id, "❌ Only Admins can remove users.")
+                return
+            target_identifier = parsed_data.get("target_user", "").strip()
+            if not target_identifier:
+                send_message(chat_id, "❌ Please specify the user's name or email to remove.")
+                return
+            with get_db() as conn:
+                target = conn.execute(
+                    "SELECT id, name, email FROM users WHERE email = ? COLLATE NOCASE OR name LIKE ? COLLATE NOCASE",
+                    (target_identifier, f"%{target_identifier}%")
+                ).fetchone()
+                if not target:
+                    send_message(chat_id, f"❌ No user found matching: {target_identifier}")
+                    return
+                conn.execute("DELETE FROM users WHERE id = ?", (target["id"],))
+                conn.commit()
+            send_message(chat_id, f"🗑️ User **{target['name']}** (`{target['email']}`) has been removed.")
+            return
+
+        if action == "remove_group":
+            if not dict(user).get("is_admin"):
+                send_message(chat_id, "❌ Only Admins can remove groups.")
+                return
+            group = parsed_data.get("target_group", "").strip()
+            if not group:
+                send_message(chat_id, "❌ Please specify the group name to remove.")
+                return
+            with get_db() as conn:
+                conn.execute("DELETE FROM groups WHERE name = ? COLLATE NOCASE", (group,))
+                conn.execute("UPDATE users SET group_name = 'Unassigned' WHERE group_name = ? COLLATE NOCASE", (group,))
+                conn.commit()
+            send_message(chat_id, f"🗑️ Group **{group}** removed. Any members have been moved to 'Unassigned'.")
+            return
+
+        if action == "set_user_group":
+            if not is_manager:
+                send_message(chat_id, "❌ Only Managers or Admins can move users between groups.")
+                return
+            target_name = parsed_data.get("target_user", "").strip()
+            target_group = parsed_data.get("target_group", "").strip()
+            if not target_name or not target_group:
+                send_message(chat_id, "❌ Please specify both the user and the group name (e.g., 'Move Dixon to S6').")
+                return
+            with get_db() as conn:
+                target_user = conn.execute(
+                    "SELECT id, name, email FROM users WHERE email = ? COLLATE NOCASE OR name LIKE ? COLLATE NOCASE",
+                    (target_name, f"%{target_name}%")
+                ).fetchone()
+                if not target_user:
+                    send_message(chat_id, f"❌ No user found matching: {target_name}")
+                    return
+                conn.execute("UPDATE users SET group_name = ? WHERE id = ?", (target_group, target_user["id"]))
+                conn.commit()
+            send_message(chat_id, f"✅ Moved **{target_user['name']}** to group: **{target_group}**.")
             return
 
         if action == "update_announcement":
