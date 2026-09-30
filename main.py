@@ -338,11 +338,20 @@ def kiosk_tap_action(req: TapActionRequest):
 def resolve_card_action(req: CardActionRequest):
     global pending_card_scan, last_action_timestamp
     last_action_timestamp[req.card_id] = time.time()
+    
+    loc = req.location.strip() if req.location else ""
+    if not loc or loc.lower() in ["unknown", "none"]:
+        loc = "--"
+        
+    cmt = req.comment.strip() if req.comment else ""
+    if not cmt or cmt.lower() in ["none"]:
+        cmt = "--"
+
     with get_db() as conn:
         if req.action == 'IN':
             conn.execute("UPDATE users SET status = 'in', location = '--', comment = '--', last_updated = CURRENT_TIMESTAMP WHERE card_id = ?", (req.card_id,))
         else:
-            conn.execute("UPDATE users SET status = 'out', location = ?, comment = ?, last_updated = CURRENT_TIMESTAMP WHERE card_id = ?", (req.location, req.comment, req.card_id))
+            conn.execute("UPDATE users SET status = 'out', location = ?, comment = ?, last_updated = CURRENT_TIMESTAMP WHERE card_id = ?", (loc, cmt, req.card_id))
         conn.commit()
     if pending_card_scan and pending_card_scan.get("card_id") == req.card_id:
         pending_card_scan = None

@@ -202,19 +202,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 else outCount++;
 
                 const statusIcon = user.status === 'in' ? '<i class="fa-solid fa-circle"></i> IN' : '<i class="fa-solid fa-circle"></i> OUT';
+                const cleanLocation = (!user.location || user.location.trim() === "" || user.location.trim() === "--" || user.location.toLowerCase() === "unknown") ? "--" : user.location.trim();
                 let iconClass = "fa-building";
-                const locLower = user.location.toLowerCase();
+                const locLower = cleanLocation.toLowerCase();
                 if (locLower.includes("lunch")) iconClass = "fa-burger";
                 else if (locLower.includes("appt") || locLower.includes("appointment")) iconClass = "fa-calendar-check";
                 else if (locLower.includes("meeting")) iconClass = "fa-handshake";
                 else if (locLower.includes("tdy")) iconClass = "fa-plane";
                 else if (locLower.includes("leave")) iconClass = "fa-umbrella-beach";
                 else if (locLower.includes("dead")) iconClass = "fa-skull-crossbones";
-                else if (user.location !== "--") iconClass = "fa-location-dot";
+                else if (cleanLocation !== "--") iconClass = "fa-location-dot";
 
-                const locationIcon = user.location === '--' ? '' : `<i class="fa-solid ${iconClass}"></i> `;
+                const locationIcon = cleanLocation === '--' ? '' : `<i class="fa-solid ${iconClass}"></i> `;
                 const rankDisplay = user.rank ? escapeHtml(user.rank) + ' ' : '';
 
+                const cleanComment = (!user.comment || user.comment.trim() === "" || user.comment.trim() === "none") ? "--" : user.comment.trim();
                 const rDisplay = user.rank ? escapeHtml(user.rank) : '';
                 const rowAttr = isKiosk ? `class="clickable-row" onclick="window.handleBadgeTap('${user.uid}')" onpointerdown="window.handleBadgeTap('${user.uid}')"` : "";
                 tbodyHtml += `
@@ -222,8 +224,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td style="color: var(--text-muted); font-weight: 500;">${rDisplay}</td>
                         <td><strong>${escapeHtml(user.name)}</strong></td>
                         <td><span class="status-badge ${user.status}">${statusIcon}</span></td>
-                        <td><div class="location-cell">${locationIcon}${escapeHtml(user.location)}</div></td>
-                        <td class="comment-cell">${escapeHtml(user.comment)}</td>
+                        <td><div class="location-cell">${locationIcon}${escapeHtml(cleanLocation)}</div></td>
+                        <td class="comment-cell">${escapeHtml(cleanComment)}</td>
                     </tr>
                 `;
             });
@@ -779,7 +781,7 @@ function handleCardScanned(data) {
                     </button>
                     <button class="quick-pick-tile" onclick="selectQuickPick('0')" style="background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4);">
                         <span class="key-badge" style="background: var(--status-out); color: white;">0</span>
-                        <span><i class="fa-solid fa-moon" style="margin-right:8px; opacity:0.8;"></i> End of Day (Blank)</span>
+                        <span><i class="fa-solid fa-arrow-right-from-bracket" style="margin-right:8px; opacity:0.8;"></i> Sign Out (Blank)</span>
                     </button>
                 </div>
 
