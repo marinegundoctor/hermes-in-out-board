@@ -579,8 +579,21 @@ def process_message(chat_id, text, message_id):
 
     # Check if we are waiting for a comment
     if chat_id in waiting_for_comment:
-        if text_clean.lower() in ["no", "nope", "nah", "no thanks", "none", "negative", "no comment"]:
+        quick_commands = [
+            "in", "i'm in", "im in", "here", "back",
+            "out", "out - eod", "out - lunch", "out - meeting",
+            "help", "/help", "/start", "/cancel", "/admin", "/rollcall",
+            "/users", "/broadcast", "/admin_help", "/admin_logout"
+        ]
+        
+        # If user sends a command, slash command, or button press, cancel comment wait and process normally
+        if text_clean.lower() in quick_commands or text_clean.startswith("/"):
+            del waiting_for_comment[chat_id]
+            # Fall through to process as a command/status update
+        elif text_clean.lower() in ["no", "nope", "nah", "no thanks", "none", "negative", "no comment", "cancel", "nevermind", "never mind", "skip"]:
             send_message(chat_id, "✅ Okay, no comment.")
+            del waiting_for_comment[chat_id]
+            return
         else:
             send_message(chat_id, "🤔 Processing your comment...")
             try:
@@ -598,8 +611,8 @@ def process_message(chat_id, text, message_id):
             except Exception as e:
                 print(f"Comment parsing error: {e}")
                 send_message(chat_id, "❌ Sorry, I had trouble parsing that comment.")
-        del waiting_for_comment[chat_id]
-        return
+            del waiting_for_comment[chat_id]
+            return
 
 
 
@@ -626,17 +639,17 @@ def process_message(chat_id, text, message_id):
 
     # AI Parsing
     # Removed to save network roundtrip
-    
     try:
-        if text_clean in ["IN", "OUT - EOD", "OUT - Lunch", "OUT - Meeting", "Help", "/help"]:
-            if text_clean in ["Help", "/help"]:
+        norm_text = text_clean.upper()
+        if norm_text in ["IN", "OUT - EOD", "OUT - LUNCH", "OUT - MEETING"] or text_clean in ["Help", "/help", "help"]:
+            if text_clean in ["Help", "/help", "help"]:
                 action = "help"
                 parsed_data = {"action": "help"}
             else:
                 action = "update_status"
-                if text_clean == "IN":
+                if norm_text == "IN":
                     parsed_data = {"action": "update_status", "status": "in", "location": "--", "comment": "--"}
-                elif text_clean == "OUT - EOD":
+                elif norm_text == "OUT - EOD":
                     parsed_data = {"action": "update_status", "status": "out", "location": "--", "comment": "--"}
                 else:
                     loc = text_clean.split("-")[1].strip()
@@ -879,6 +892,11 @@ def process_message(chat_id, text, message_id):
             send_message(chat_id, f"✅ Group order successfully updated by {user['name']}:\n" + ", ".join(target_groups))
             return
 
+        if action == "clarify":
+            prompt = parsed_data.get("clarification_prompt") or "I couldn't quite understand that. Could you please clarify your status update?"
+            send_message(chat_id, f"❓ {prompt}")
+            return
+
         if action == "ignore":
             send_message(chat_id, "❌ I can only process In/Out Board status updates and administrative commands. Please try again with a valid request.")
             return
@@ -898,13 +916,24 @@ def process_message(chat_id, text, message_id):
             if location.lower() in ["unknown", "--"]:
                 location = "--"
         else:
-            # When OUT: If no new location was given, usually carry over the old one (e.g. for "running late")
-            if location.lower() == "unknown" or location == "--":
-                # But if they just say "Out" or "I'm out", wipe it clean instead of carrying over
-                if text_clean.lower() in ["out", "out.", "i'm out", "im out", "leaving", "heading out", "gone"]:
-                    location = "--"
-                else:
+            # When OUT:
+            if location.lower() in ["unknown", "--"]:
+                # Check if this message describes transit, weather/traffic delay, arrival, or explicit clearance
+                transit_or_clear_words = [
+                    "out", "leaving", "heading out", "gone", "traffic", "fog", "weather", 
+                    "accident", "en route", "transit", "driving", "heading in", "coming in", 
+                    "be in", "arriving", "on my way", "not at", "do not mark", "clear", "home", "delayed"
+                ]
+                is_transit_or_clear = any(w in text_clean.lower() for w in transit_or_clear_words)
+                
+                # Only carry over existing location if user was ALREADY out, has an actual location, 
+                # and this is strictly a return-time update without transit/clearance context
+                if (not is_transit_or_clear 
+                    and user["status"] == "out" 
+                    and user["location"] not in ["--", "Unknown", "unknown", ""]):
                     location = user["location"]
+                else:
+                    location = "--"
             
         comment = parsed_data.get("comment", "--")
         
