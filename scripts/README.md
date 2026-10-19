@@ -33,7 +33,7 @@ You can set this script up to run automatically in the background using `systemd
 
    [Service]
    Type=simple
-   ExecStart=/home/margun/in-out_board/scripts/wifi_watchdog.sh
+   ExecStart=/home/pi/in-out_board/scripts/wifi_watchdog.sh
    Restart=on-failure
    RestartSec=10
 

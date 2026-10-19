@@ -13,12 +13,12 @@ if [ -z "$HDMI1_WIDTH" ]; then
     HDMI1_WIDTH=1920
 fi
 
-/usr/bin/chromium $OPTS --window-position=0,0 --user-data-dir=/home/margun/.config/chromium-display1 "$URL" &
+/usr/bin/chromium $OPTS --window-position=0,0 --user-data-dir="$HOME/.config/chromium-display1" "$URL" &
 PID1=$!
 
 sleep 2
 
-/usr/bin/chromium $OPTS --window-position=$HDMI1_WIDTH,0 --user-data-dir=/home/margun/.config/chromium-display2 "$URL" &
+/usr/bin/chromium $OPTS --window-position=$HDMI1_WIDTH,0 --user-data-dir="$HOME/.config/chromium-display2" "$URL" &
 PID2=$!
 
 wait $PID1 $PID2

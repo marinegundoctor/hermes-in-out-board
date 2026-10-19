@@ -12,7 +12,7 @@ This guide details how to set up and deploy secondary/remote kiosk displays (e.g
                          ▼ (wlan0 or eth0)
               ┌─────────────────────┐
               │   Raspberry Pi 4    │ (Central Server - Docker)
-              │  "ia-rrb-board"     │ Tailscale: 100.75.95.0
+              │  "hermes-board"     │ Tailscale: 100.64.0.1
               └──────────┬──────────┘
                          │ (wlan1 - USB Wi-Fi AP)
                          ▼
